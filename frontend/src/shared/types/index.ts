@@ -1,5 +1,3 @@
-// Core entity types for the knowledge graph system
-
 export interface Entity {
   id: string
   type: EntityType
