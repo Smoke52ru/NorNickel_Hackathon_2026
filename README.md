@@ -12,14 +12,14 @@
 NorNickel_Hackathon_2026/
 ├── frontend/          # React + Vite приложение (наша часть)
 │   ├── src/
-│   │   ├── components/   # Переиспользуемые UI компоненты
-│   │   ├── pages/        # Страницы приложения
-│   │   ├── hooks/        # Кастомные React hooks
-│   │   ├── services/     # API сервисы для работы с бэкендом
-│   │   ├── types/        # TypeScript типы и интерфейсы
-│   │   ├── utils/        # Утилитарные функции
-│   │   ├── App.tsx       # Корневой компонент
-│   │   └── main.tsx      # Точка входа приложения
+│   │   ├── app/            # Redux store, providers, router, typed hooks
+│   │   ├── pages/          # Страницы приложения
+│   │   ├── features/       # Feature-slices (бизнес-логика)
+│   │   ├── shared/
+│   │   │   ├── api/        # RTK Query API (baseApi)
+│   │   │   ├── components/ # Переиспользуемые UI компоненты
+│   │   │   └── types/      # TypeScript типы и интерфейсы
+│   │   └── main.tsx        # Точка входа приложения
 │   ├── public/         # Статические ресурсы
 │   ├── index.html      # HTML шаблон
 │   ├── package.json    # NPM зависимости
@@ -35,12 +35,12 @@ NorNickel_Hackathon_2026/
 
 ### Frontend структура
 
-- **`components/`** — Переиспользуемые React компоненты (карточки, графы, формы поиска)
+- **`app/`** — Конфигурация приложения: Redux store, providers, router, typed hooks (`useAppDispatch`, `useAppSelector`)
 - **`pages/`** — Компоненты страниц, соответствующие маршрутам приложения
-- **`hooks/`** — Кастомные React hooks для бизнес-логики
-- **`services/`** — Модули для работы с API (Axios инстанс, функции запросов)
-- **`types/`** — TypeScript типы для сущностей knowledge graph (Entity, Relationship и др.)
-- **`utils/`** — Вспомогательные функции (форматирование, валидация)
+- **`features/`** — Feature-slices с бизнес-логикой (поиск, граф, фильтры)
+- **`shared/api/`** — RTK Query API-слой (`baseApi`) для работы с backend
+- **`shared/components/`** — Переиспользуемые UI компоненты (layout, карточки, графы)
+- **`shared/types/`** — TypeScript типы для сущностей knowledge graph (Entity, Relationship и др.)
 
 ### Backend структура
 
@@ -53,11 +53,12 @@ NorNickel_Hackathon_2026/
 
 | Технология | Назначение |
 |------------|------------|
-| **React 18** | UI библиотека для построения интерфейса |
+| **React 19** | UI библиотека для построения интерфейса |
 | **TypeScript** | Типизация для безопасности кода |
 | **Vite** | Сборщик и dev-сервер (быстрая HMR) |
+| **Redux Toolkit** | Управление состоянием приложения |
+| **RTK Query** | Работа с API, кэширование и инвалидация данных |
 | **React Router** | Маршрутизация в SPA |
-| **Axios** | HTTP клиент для API запросов |
 
 ### Backend Stack (справочно)
 
