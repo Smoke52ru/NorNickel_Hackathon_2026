@@ -15,9 +15,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 
 def _load():
-    """Грузим артефакты сборки один раз при старте: граф, поисковый индекс
-    и документы (для /document). Если сборки не было — API поднимется, но честно
-    ответит, что база знаний пуста."""
+    """Артефакты сборки грузим один раз при старте: граф, поисковый индекс и документы.
+    Если сборки не было — API поднимется и честно ответит, что база пуста."""
     graph_path = os.path.join(config.DATA_PROCESSED, "graph.pkl")
     docs_path = os.path.join(config.DATA_PROCESSED, "documents.jsonl")
     graph = NetworkxGraphStore().load(graph_path) if os.path.exists(graph_path) else None
@@ -35,8 +34,16 @@ GRAPH, RETRIEVER, DOCS = _load()
 LLM = get_llm()
 
 
+class Filters(BaseModel):
+    geo: str | None = None                # "ru" | "foreign"
+    year_from: int | None = None
+    year_to: int | None = None
+    types: list[str] | None = None        # Material, Process, Equipment, Property, ...
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
+    filters: Filters | None = None
 
 
 @app.get("/health")
@@ -49,12 +56,12 @@ def health():
 def ask(req: AskRequest):
     if RETRIEVER is None:
         return {"answer": "База знаний не собрана. Запусти parse и build (см. README).",
-                "sources": [], "confidence": "low",
+                "answer_links": [], "sources": [], "confidence": "low",
                 "graph": {"nodes": [], "edges": []}, "gaps": [], "contradictions": []}
     try:
-        return rag.answer(req.question, RETRIEVER, GRAPH, LLM)
+        return rag.answer(req.question, RETRIEVER, GRAPH, LLM,
+                          filters=req.filters.model_dump() if req.filters else None)
     except Exception as e:
-        # чаще всего это недоступность LLM-API; фронту достаточно кода и краткого текста
         raise HTTPException(status_code=502, detail=f"Ошибка генерации ответа: {e}")
 
 
