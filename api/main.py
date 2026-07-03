@@ -1,9 +1,28 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from core import config, rag
+from core.graph_store import NetworkxGraphStore
+from core.llm import get_llm
+from core.retrieval import BM25Retriever
+
 app = FastAPI(title="Научный клубок — API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def _load():
+    graph_path = os.path.join(config.DATA_PROCESSED, "graph.pkl")
+    docs_path = os.path.join(config.DATA_PROCESSED, "documents.jsonl")
+    graph = NetworkxGraphStore().load(graph_path) if os.path.exists(graph_path) else None
+    retriever = BM25Retriever.from_jsonl(docs_path) if os.path.exists(docs_path) else None
+    return graph, retriever
+
+
+GRAPH, RETRIEVER = _load()
+LLM = get_llm()
 
 
 class AskRequest(BaseModel):
@@ -12,33 +31,14 @@ class AskRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "graph": GRAPH.stats() if GRAPH else None,
+            "retriever": bool(RETRIEVER)}
 
 
 @app.post("/ask")
 def ask(req: AskRequest):
-    # TODO: заменить мок на core.rag.answer(...)
-    return {
-        "answer": f"[мок] Ответ на вопрос: «{req.question}».",
-        "sources": [
-            {"doc_id": "obzor_ochistka_vod", "title": "Методы очистки шахтных вод",
-             "year": 2021, "snippet": "Обратный осмос применяется при сульфатах…"},
-        ],
-        "confidence": "medium",
-        "graph": {
-            "nodes": [
-                {"id": "n1", "label": "Шахтные воды", "type": "Material"},
-                {"id": "n2", "label": "Обратный осмос", "type": "Process"},
-                {"id": "n3", "label": "Сухой остаток ≤1000 мг/дм³", "type": "Property"},
-            ],
-            "edges": [
-                {"from": "n2", "to": "n1", "label": "uses_material", "flag": "normal"},
-                {"from": "n2", "to": "n3", "label": "produces_output", "flag": "normal"},
-            ],
-        },
-        "gaps": ["нет данных: холодный климат + кучное выщелачивание + никелевая руда"],
-        "contradictions": [
-            {"about": "оптимальная скорость циркуляции католита",
-             "sources": ["obzor_electro_ni", "statya_2024"]},
-        ],
-    }
+    if RETRIEVER is None:
+        return {"answer": "База знаний не собрана. Запусти parse и build (см. README).",
+                "sources": [], "confidence": "low",
+                "graph": {"nodes": [], "edges": []}, "gaps": [], "contradictions": []}
+    return rag.answer(req.question, RETRIEVER, GRAPH, LLM)
