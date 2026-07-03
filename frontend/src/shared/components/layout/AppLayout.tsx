@@ -1,16 +1,18 @@
 import { Outlet } from 'react-router-dom'
+import { AppHeader } from './AppHeader'
+import { AppFooter } from './AppFooter'
+import { SettingsDrawer } from './SettingsDrawer'
 import styles from './AppLayout.module.css'
 
 export function AppLayout() {
   return (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <h1>NorNickel AI Science Hack</h1>
-        <p>Knowledge Graph & Search-Analytical System</p>
-      </header>
+      <AppHeader />
       <main className={styles.main}>
         <Outlet />
       </main>
+      <AppFooter />
+      <SettingsDrawer />
     </div>
   )
 }
