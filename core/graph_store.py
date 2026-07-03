@@ -6,6 +6,9 @@ import networkx as nx
 
 
 class GraphStore(ABC):
+    """Интерфейс хранилища графа ("розетка"). Сейчас реализация на networkx,
+    при необходимости заменяется на Neo4j без правок остального кода."""
+
     @abstractmethod
     def add_entity(self, eid, etype, name, **attrs): ...
     @abstractmethod
@@ -20,12 +23,15 @@ class GraphStore(ABC):
 
 class NetworkxGraphStore(GraphStore):
     def __init__(self):
+        # MultiDiGraph: направленный граф, между двумя узлами допустимо несколько
+        # рёбер разного типа (и uses_material, и produces_output одновременно).
         self.g = nx.MultiDiGraph()
 
     def add_entity(self, eid, etype, name, **attrs):
         self.g.add_node(eid, type=etype, name=name, **attrs)
 
     def add_relation(self, src, dst, rel, **attrs):
+        # key=rel — чтобы разные типы связей между теми же узлами не перетирали друг друга
         self.g.add_edge(src, dst, key=rel, rel=rel, **attrs)
 
     def neighbors(self, eid):
@@ -38,15 +44,22 @@ class NetworkxGraphStore(GraphStore):
             return None
 
     def to_dict(self, nodes=None):
+        """(Под)граф в формате контракта фронта: nodes + edges.
+        flag на узлах по умолчанию None — его проставляет rag.answer по результатам аналитики."""
         g = self.g if nodes is None else self.g.subgraph(nodes)
-        out_nodes = [{"id": n, "label": d.get("name", n), "type": d.get("type", "")}
+        out_nodes = [{"id": n, "label": d.get("name", n), "type": d.get("type", ""),
+                      "geo": d.get("geo", "unknown"), "flag": None,
+                      "sources": d.get("sources", [])}
                      for n, d in g.nodes(data=True)]
+        # keys=True нужен: key идёт запасной подписью ребра, если нет rel
         out_edges = [{"from": u, "to": v, "label": d.get("rel", key),
                       "flag": "contradiction" if d.get("rel") == "contradicts" else "normal"}
                      for u, v, key, d in g.edges(keys=True, data=True)]
         return {"nodes": out_nodes, "edges": out_edges}
 
     def match(self, text):
+        """Найти узлы, упомянутые в тексте запроса. Сравниваем по основе слова
+        (без окончания), иначе русская морфология мешает: «электроэкстракцию» != «электроэкстракция»."""
         t = text.lower()
         out = []
         for n, d in self.g.nodes(data=True):
@@ -60,6 +73,7 @@ class NetworkxGraphStore(GraphStore):
         return out
 
     def ego(self, seeds, hops=1):
+        """Окружение узлов: сами узлы + соседи на расстоянии hops."""
         nodes, frontier = set(seeds), set(seeds)
         for _ in range(hops):
             nxt = set()
@@ -70,7 +84,13 @@ class NetworkxGraphStore(GraphStore):
         return nodes
 
     def subgraph_for(self, text, hops=1):
+        """Подграф по теме вопроса — то, что уходит на визуализацию."""
         return self.to_dict(self.ego(self.match(text), hops))
+
+    def overview(self, max_nodes=150):
+        """Срез всего графа для обзорной «карты знаний»: самые связанные узлы."""
+        deg = sorted(self.g.degree, key=lambda x: -x[1])[:max_nodes]
+        return self.to_dict([n for n, _ in deg])
 
     def save(self, path):
         with open(path, "wb") as f:

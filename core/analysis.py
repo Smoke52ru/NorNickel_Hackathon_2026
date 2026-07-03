@@ -3,10 +3,15 @@ def _sources(node):
 
 
 def find_contradictions(graph):
+    """Найти противоречия в данных двумя путями:
+    1) явные рёбра `contradicts`, поставленные при извлечении;
+    2) расхождение числовых значений одного свойства, если они пришли из РАЗНЫХ источников
+       (один источник с диапазоном 10-12 — это не противоречие, поэтому проверяем len(sources) > 1).
+    """
     g = graph.g
     result = []
 
-    for u, v, key, d in g.edges(keys=True, data=True):
+    for u, v, d in g.edges(data=True):
         if d.get("rel") == "contradicts":
             result.append({
                 "about": g.nodes[u].get("name", u),
@@ -29,6 +34,13 @@ def find_contradictions(graph):
 
 
 def find_gaps(graph, limit=20):
+    """Найти неизученные комбинации материал × процесс.
+
+    Логика (объяснимая, без чёрного ящика): считаем пару «изученной», если материал и процесс
+    встречаются вместе хотя бы в одном источнике. Пробел = пара, которой нет, при условии, что
+    и материал, и процесс где-то ещё изучались (иначе это не пробел, а просто отсутствие темы).
+    Ранжируем по значимости: чем больше связей у обоих — тем интереснее пробел.
+    """
     g = graph.g
     materials = {n: d for n, d in g.nodes(data=True) if d.get("type") == "Material"}
     processes = {n: d for n, d in g.nodes(data=True) if d.get("type") == "Process"}

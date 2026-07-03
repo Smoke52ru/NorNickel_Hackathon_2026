@@ -10,5 +10,9 @@ build:
 api:
 	uvicorn api.main:app --reload
 
+demo:
+	python scripts/build.py --input data/sample/documents.jsonl --output data/processed
+	uvicorn api.main:app --reload
+
 front:
 	cd frontend && npm install && npm run dev

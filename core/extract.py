@@ -16,27 +16,35 @@ PROMPT_TEMPLATE = """Извлеки из текста сущности, связ
   "numbers": [{{"property": "сульфаты", "op": "<=", "value": 300, "unit": "мг/л"}}]
 }}
 
-Числа с единицами извлекай точно, синонимы сводй к одному имени, отсутствующее — пустой список.
+Числа с единицами извлекай точно, синонимы своди к одному имени, отсутствующее — пустой список.
 
 ТЕКСТ:
 {text}
 """
+
+# Защитный предел на длину фрагмента: у модели ограниченное контекстное окно.
+# Документ целиком сюда НЕ подаём — его режут на chunks (ingest/parse.py), а extract()
+# вызывается на каждом куске отдельно (см. scripts/build.py). Это перекрывает один chunk с запасом.
+MAX_CHARS = 8000
 
 
 def build_prompt(text):
     return PROMPT_TEMPLATE.format(
         entity_types=", ".join(ENTITY_TYPES),
         relation_types=", ".join(RELATION_TYPES),
-        text=text[:6000],
+        text=text[:MAX_CHARS],
     )
 
 
 def extract(text, llm):
+    """Извлечь сущности, связи и числа из одного фрагмента текста через LLM."""
     raw = llm.generate(build_prompt(text), system=SYSTEM, temperature=0.0)
     return _parse_json(raw)
 
 
 def _parse_json(raw):
+    """Достать JSON из ответа модели. Модель иногда оборачивает его в ```json ... ``` —
+    срезаем обёртку; при невалидном JSON возвращаем пустой результат, чтобы не ронять пайплайн."""
     raw = raw.strip()
     if "```" in raw:
         raw = raw.split("```")[1].removeprefix("json").strip()
