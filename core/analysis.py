@@ -16,12 +16,13 @@ def find_contradictions(graph):
 
     for n, d in g.nodes(data=True):
         measurements = [m for m in (d.get("measurements") or []) if m.get("value") is not None]
-        distinct = {(m.get("value"), m.get("unit")) for m in measurements}
-        if len(distinct) > 1:
+        distinct = {(str(m.get("value")), m.get("unit")) for m in measurements}
+        sources = {m.get("source") for m in measurements}
+        if len(distinct) > 1 and len(sources) > 1:
             result.append({
                 "about": d.get("name", n),
                 "values": measurements,
-                "sources": sorted({m.get("source") for m in measurements}),
+                "sources": sorted(sources),
             })
 
     return result
