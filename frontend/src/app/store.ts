@@ -1,8 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { baseApi } from '@/shared/api/baseApi'
+import settingsReducer from './settingsSlice'
 
 export const store = configureStore({
   reducer: {
+    settings: settingsReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

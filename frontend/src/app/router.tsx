@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { HomePage } from '@/pages/HomePage/HomePage'
+import { AskPage } from '@/pages/AskPage/AskPage'
 import { AppLayout } from '@/shared/components/layout/AppLayout'
 
 const router = createBrowserRouter([
@@ -9,7 +9,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <AskPage />,
       },
     ],
   },
