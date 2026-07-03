@@ -5,7 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core import extract
+from core import analysis, extract
+from core.graph_build import add_extraction
 from core.graph_store import NetworkxGraphStore
 from core.llm import get_llm
 
@@ -30,11 +31,14 @@ def main():
         if args.limit and i >= args.limit:
             break
         data = extract.extract(doc["text"], llm)
-        print(f"[{i}] {doc['doc_id']}: {len(data['entities'])} entities, {len(data['relations'])} relations")
+        add_extraction(graph, data, doc["doc_id"], doc)
+        print(f"[{i}] {doc['doc_id']}: +{len(data['entities'])} entities, +{len(data['relations'])} relations")
 
     os.makedirs(args.output, exist_ok=True)
     graph.save(os.path.join(args.output, "graph.pkl"))
     print("graph:", graph.stats())
+    print("contradictions:", len(analysis.find_contradictions(graph)))
+    print("gaps:", len(analysis.find_gaps(graph)))
 
 
 if __name__ == "__main__":

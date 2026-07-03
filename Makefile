@@ -1,16 +1,14 @@
-# Удобные команды. На Windows без make — просто запускай команды справа вручную.
-
-install:       ## поставить зависимости
+install:
 	python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 
-parse:         ## распарсить документы -> documents.jsonl
+parse:
 	python -m ingest.parse --input data/raw --output data/processed/documents.jsonl
 
-build:         ## собрать граф + индекс
+build:
 	python scripts/build.py --input data/processed/documents.jsonl --output data/processed
 
-api:           ## запустить бэкенд
+api:
 	uvicorn api.main:app --reload
 
-front:         ## запустить фронтенд
+front:
 	cd frontend && npm install && npm run dev

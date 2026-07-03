@@ -1,4 +1,5 @@
 import pickle
+import re
 from abc import ABC, abstractmethod
 
 import networkx as nx
@@ -44,6 +45,32 @@ class NetworkxGraphStore(GraphStore):
                       "flag": "contradiction" if d.get("rel") == "contradicts" else "normal"}
                      for u, v, key, d in g.edges(keys=True, data=True)]
         return {"nodes": out_nodes, "edges": out_edges}
+
+    def match(self, text):
+        t = text.lower()
+        out = []
+        for n, d in self.g.nodes(data=True):
+            name = d.get("name", "").lower()
+            words = [w for w in re.split(r"\W+", name) if len(w) >= 4]
+            if not words:
+                if name and name in t:
+                    out.append(n)
+            elif all(w[:max(4, len(w) - 2)] in t for w in words):
+                out.append(n)
+        return out
+
+    def ego(self, seeds, hops=1):
+        nodes, frontier = set(seeds), set(seeds)
+        for _ in range(hops):
+            nxt = set()
+            for n in frontier:
+                nxt |= set(self.g.successors(n)) | set(self.g.predecessors(n))
+            nodes |= nxt
+            frontier = nxt
+        return nodes
+
+    def subgraph_for(self, text, hops=1):
+        return self.to_dict(self.ego(self.match(text), hops))
 
     def save(self, path):
         with open(path, "wb") as f:

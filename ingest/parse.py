@@ -1,5 +1,4 @@
-# Парсинг корпуса в data/processed/documents.jsonl
-# Владелец: Дубинин. Формат записи: doc_id, source_path, title, year, lang, text, chunks
+# documents.jsonl: {doc_id, source_path, title, year, lang, text, chunks}
 import argparse
 
 
