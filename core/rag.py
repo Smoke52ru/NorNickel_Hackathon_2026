@@ -134,8 +134,7 @@ def _doc_numbers(graph, doc_id):
 
 
 def compare(question, retriever, graph):
-    """Сравнительная таблица по теме: строка = источник, колонки = год, гео, числа, вырезка.
-    Закрывает пункт ТЗ про сравнительный анализ (в т.ч. отеч vs зарубеж)."""
+    """Сравнительная таблица по теме: строка = источник, колонки = год, гео, числа, вырезка."""
     hits = retriever.search(question, k=8) if retriever else []
     rows = {}
     for h in hits:

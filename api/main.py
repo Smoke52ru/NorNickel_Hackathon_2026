@@ -17,14 +17,14 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 def _load():
     """Артефакты сборки грузим один раз при старте: граф, поисковый индекс и документы.
-    Если сборки не было — API поднимется и честно ответит, что база пуста."""
+    Если сборки не было - API поднимется и честно ответит, что база пуста."""
     graph_path = os.path.join(config.DATA_PROCESSED, "graph.pkl")
     docs_path = os.path.join(config.DATA_PROCESSED, "documents.jsonl")
     graph = NetworkxGraphStore().load(graph_path) if os.path.exists(graph_path) else None
     try:
         embedder = get_embedder()
     except Exception:
-        embedder = None  # эмбеддер недоступен — поиск деградирует до BM25
+        embedder = None  # эмбеддер недоступен - поиск деградирует до BM25
     retriever = HybridRetriever.from_processed(config.DATA_PROCESSED, embedder=embedder)
     docs = {}
     if os.path.exists(docs_path):
@@ -35,8 +35,12 @@ def _load():
     return graph, retriever, docs
 
 
-GRAPH, RETRIEVER, DOCS = _load()
-LLM = get_llm()
+if config.MOCK:
+    # фронт-режим: ничего тяжёлого не грузим, эндпоинты отдают готовые ответы
+    GRAPH = RETRIEVER = DOCS = LLM = None
+else:
+    GRAPH, RETRIEVER, DOCS = _load()
+    LLM = get_llm()
 
 
 class NumericFilter(BaseModel):
@@ -64,12 +68,16 @@ class CompareRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "graph": GRAPH.stats() if GRAPH else None,
-            "documents": len(DOCS)}
+    return {"status": "ok", "mock": config.MOCK,
+            "graph": GRAPH.stats() if GRAPH else None,
+            "documents": len(DOCS) if DOCS else 0}
 
 
 @app.post("/ask")
 def ask(req: AskRequest):
+    if config.MOCK:
+        from core import mock
+        return mock.ASK
     if RETRIEVER is None:
         return {"answer": "База знаний не собрана. Запусти parse и build.",
                 "answer_links": [], "sources": [], "confidence": "low",
@@ -84,6 +92,9 @@ def ask(req: AskRequest):
 @app.post("/compare")
 def compare(req: CompareRequest):
     """Сравнительная таблица источников по теме (год, гео, числа, вырезка)."""
+    if config.MOCK:
+        from core import mock
+        return mock.COMPARE
     if RETRIEVER is None:
         return {"question": req.question, "rows": []}
     return rag.compare(req.question, RETRIEVER, GRAPH)
@@ -91,7 +102,10 @@ def compare(req: CompareRequest):
 
 @app.get("/document/{doc_id}")
 def document(doc_id: str):
-    """Полный текст и метаданные документа — для перехода из источников и узлов Publication."""
+    """Полный текст и метаданные документа - для перехода из источников и узлов Publication."""
+    if config.MOCK:
+        from core import mock
+        return mock.DOC
     d = DOCS.get(doc_id)
     if not d:
         raise HTTPException(status_code=404, detail="Документ не найден")
@@ -102,6 +116,9 @@ def document(doc_id: str):
 @app.get("/graph")
 def graph_overview(limit: int = 150):
     """Обзорная «карта знаний»: самые связанные узлы всего графа."""
+    if config.MOCK:
+        from core import mock
+        return mock.GRAPH
     if GRAPH is None:
         return {"nodes": [], "edges": []}
     return GRAPH.overview(max_nodes=limit)
