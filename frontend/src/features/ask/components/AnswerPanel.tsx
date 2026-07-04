@@ -90,7 +90,10 @@ export function AnswerPanel({ data, loading = false, hasAsked = false }: AnswerP
                 <SourcesList sources={filteredSources} />
                 {filters.showGaps && <GapsAlert gaps={data.gaps} />}
                 {filters.showContradictions && (
-                  <ContradictionsAlert contradictions={data.contradictions} />
+                  <ContradictionsAlert
+                    contradictions={data.contradictions}
+                    sourceCatalog={data.sources}
+                  />
                 )}
               </>
             )}

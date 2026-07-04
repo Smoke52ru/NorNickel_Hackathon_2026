@@ -71,6 +71,8 @@ class CompareRequest(BaseModel):
 
 @app.get("/health")
 def health():
+    if config.MOCK:
+        return {"status": "ok", "mock": True, "mock_datasets": 4}
     return {"status": "ok", "mock": config.MOCK,
             "graph": GRAPH.stats() if GRAPH else None,
             "documents": len(DOCS) if DOCS else 0}
@@ -80,7 +82,7 @@ def health():
 def ask(req: AskRequest):
     if config.MOCK:
         from core import mock
-        return mock.ASK
+        return mock.get_ask(req.question)
     if RETRIEVER is None:
         return {"answer": "База знаний не собрана. Запусти parse и build.",
                 "answer_links": [], "sources": [], "confidence": "low",
@@ -120,7 +122,10 @@ def document(doc_id: str):
     и подсветки найденных сущностей прямо в тексте документа."""
     if config.MOCK:
         from core import mock
-        return mock.DOC
+        try:
+            return mock.get_document(doc_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Документ не найден")
     d = DOCS.get(doc_id)
     if not d:
         raise HTTPException(status_code=404, detail="Документ не найден")
