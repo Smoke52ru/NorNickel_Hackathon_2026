@@ -22,7 +22,10 @@ vercel --prod   # production
 1. [vercel.com/new](https://vercel.com/new) → Import репозитория.
 2. **Framework Preset** → **Services** (обязательно, иначе `vercel.json` с `services` не сработает).
 3. Root Directory — корень репо (не `frontend/`).
-4. Deploy.
+4. **Production Branch** → `dev` (Settings → Environments → Production).
+5. Deploy.
+
+Автодеплой включён **только для `dev`**: в `vercel.json` задано `"git.deploymentEnabled": { "dev": true }` — push в другие ветки игнорируется.
 
 ## Как устроено
 
