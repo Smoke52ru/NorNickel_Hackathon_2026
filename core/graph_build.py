@@ -11,14 +11,13 @@ def _norm(name):
 
 
 def _nid(name):
-    """Стабильный id узла из имени — чтобы одна и та же сущность из разных документов
+    """Стабильный id узла из имени - чтобы одна и та же сущность из разных документов
     попадала в ОДИН узел (дедупликация)."""
     return re.sub(r"\W+", "_", _norm(name)).strip("_")[:60]
 
 
 def _stems(name):
-    """Основы слов названия (обрезаем окончания) — грубая замена стеммера,
-    достаточная, чтобы пережить русскую морфологию."""
+    """Основы слов названия (обрезаем окончания) - грубая замена стеммера"""
     words = [w for w in re.split(r"\W+", _norm(name)) if w and w not in _STOP]
     return [w[:max(4, len(w) - 2)] for w in words]
 
@@ -26,11 +25,9 @@ def _stems(name):
 def _find_property(g, name):
     """Ищем существующий узел-свойство про ту же физическую величину.
 
-    LLM в разных документах называет одно свойство по-разному («скорость циркуляции
-    католита» / «скорость потока католита») — если не склеивать такие узлы, поиск
-    противоречий никогда не увидит расхождение значений. Считаем свойства одинаковыми,
-    если совпадает первое слово (сама величина: «скорость», «концентрация») и множества
-    основ пересекаются хотя бы наполовину.
+    Считаем свойства одинаковыми, если совпадает первое слово 
+    (сама величина: скорость, концентрация) и множества основ
+    пересекаются хотя бы наполовину.
     """
     stems = _stems(name)
     if not stems:
@@ -54,11 +51,7 @@ def _add_source(node, doc_id):
 
 
 def add_extraction(graph, extraction, doc_id, meta=None):
-    """Влить результат извлечения одного фрагмента в граф.
-
-    doc_id пишем в каждый узел/ребро как источник (провенанс) — на этом держатся
-    и показ источников, и поиск противоречий.
-    """
+    """Влить результат извлечения одного фрагмента в граф."""
     g = graph.g
 
     for e in extraction.get("entities", []):
@@ -66,7 +59,6 @@ def add_extraction(graph, extraction, doc_id, meta=None):
         if not name:
             continue
         etype = e.get("type", "Unknown")
-        # свойства склеиваем по смыслу, остальное — по нормализованному имени
         eid = (_find_property(g, name) if etype == "Property" else None) or _nid(name)
         if eid in g:
             _add_source(g.nodes[eid], doc_id)
@@ -80,8 +72,7 @@ def add_extraction(graph, extraction, doc_id, meta=None):
             continue
         sid, tid = _nid(s), _nid(t)
         # Если модель упомянула в связи сущность, которую не положила в entities,
-        # создаём узел-заглушку Unknown: связь ценнее чистоты типов, а в анализ
-        # пробелов Unknown-узлы всё равно не попадают (там только Material/Process).
+        # создаём узел-заглушку Unknown
         for nid, nm in ((sid, s), (tid, t)):
             if nid not in g:
                 graph.add_entity(nid, "Unknown", nm, sources=[doc_id])
@@ -96,7 +87,7 @@ def add_extraction(graph, extraction, doc_id, meta=None):
             graph.add_entity(pid, "Property", prop, measurements=[], sources=[doc_id])
         else:
             _add_source(g.nodes[pid], doc_id)
-        # Числа копим списком «измерений» на узле-свойстве — расхождения между
+        # Числа копим списком "измерений" на узле-свойстве - расхождения между
         # источниками потом ловит find_contradictions.
         g.nodes[pid].setdefault("measurements", []).append(
             {"op": num.get("op"), "value": num.get("value"),
@@ -104,7 +95,7 @@ def add_extraction(graph, extraction, doc_id, meta=None):
 
 
 def build_graph(documents, extractor, llm):
-    """Собрать граф из списка документов (каждый прогоняется через extractor по кускам)."""
+    """Собрать граф из списка документов (каждый прогоняется через extractor по чанкам)."""
     graph = NetworkxGraphStore()
     for doc in documents:
         for chunk in doc.get("chunks") or [doc["text"]]:
