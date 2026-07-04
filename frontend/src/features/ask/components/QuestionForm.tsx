@@ -1,4 +1,4 @@
-import { Button, Input, Space, Tag } from 'antd'
+import { Button, Input, Tag } from 'antd'
 import styles from './QuestionForm.module.css'
 
 const { TextArea } = Input
@@ -28,12 +28,12 @@ export function QuestionForm({
 
   return (
     <div className={styles.form}>
-      <Space.Compact style={{ width: '100%' }} size="large">
+      <div className={styles.inputRow}>
         <TextArea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Задайте вопрос на естественном языке…"
-          autoSize={{ minRows: 2, maxRows: 4 }}
+          autoSize={{ minRows: 1, maxRows: 4 }}
           onPressEnter={(e) => {
             if (!e.shiftKey) {
               e.preventDefault()
@@ -41,10 +41,10 @@ export function QuestionForm({
             }
           }}
           disabled={loading}
+          className={styles.textarea}
         />
         <Button
           type="primary"
-          size="large"
           onClick={onSubmit}
           loading={loading}
           disabled={!value.trim()}
@@ -52,7 +52,7 @@ export function QuestionForm({
         >
           Спросить
         </Button>
-      </Space.Compact>
+      </div>
       <div className={styles.examples}>
         <span className={styles.examplesLabel}>Примеры:</span>
         {EXAMPLE_QUESTIONS.map((q) => (

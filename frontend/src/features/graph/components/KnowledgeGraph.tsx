@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Network } from 'vis-network'
 import { DataSet } from 'vis-data'
-import { Card, Empty, Spin } from 'antd'
+import { Card, Empty, Spin, theme } from 'antd'
 import type { GraphData } from '@/shared/types/ask'
 import { NODE_COLORS, NODE_TYPE_LABELS } from '../config/nodeStyles'
 import { EDGE_STYLES, EDGE_FLAG_LABELS } from '../config/edgeStyles'
+import { getRelationLabel } from '../config/relationLabels'
 import styles from './KnowledgeGraph.module.css'
 
 interface KnowledgeGraphProps {
@@ -26,6 +27,7 @@ export function KnowledgeGraph({
 }: KnowledgeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
+  const { token } = theme.useToken()
 
   useEffect(() => {
     if (!containerRef.current || !graph || graph.nodes.length === 0) {
@@ -43,7 +45,7 @@ export function KnowledgeGraph({
           border: NODE_COLORS[node.type],
           highlight: { background: NODE_COLORS[node.type], border: '#000' },
         },
-        font: { color: '#fff', size: 12 },
+        font: { color: token.colorText, size: 12, strokeWidth: 0 },
         title: `${NODE_TYPE_LABELS[node.type]}: ${node.label}`,
       })),
     )
@@ -55,12 +57,18 @@ export function KnowledgeGraph({
           id: `e${i}`,
           from: edge.from,
           to: edge.to,
-          label: edge.label,
+          label: getRelationLabel(edge.label),
           color: { color: style.color, highlight: style.color },
           width: style.width,
           dashes: style.dashes,
-          font: { size: 10, align: 'middle' as const },
-          title: EDGE_FLAG_LABELS[edge.flag],
+          font: {
+            size: 10,
+            align: 'middle' as const,
+            color: token.colorTextSecondary,
+            background: token.colorBgContainer,
+            strokeWidth: 0,
+          },
+          title: `${getRelationLabel(edge.label)} (${EDGE_FLAG_LABELS[edge.flag]})`,
         }
       }),
     )
@@ -103,7 +111,7 @@ export function KnowledgeGraph({
       networkRef.current?.destroy()
       networkRef.current = null
     }
-  }, [graph])
+  }, [graph, token.colorText, token.colorTextSecondary, token.colorBgContainer])
 
   useEffect(() => {
     if (!networkRef.current || !focusedNodeId) return
