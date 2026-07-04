@@ -10,7 +10,7 @@ export function DocumentSider() {
   const dispatch = useAppDispatch()
   const { open, docId } = useAppSelector((state) => state.settings.documentPanel)
 
-  const { data, isLoading, isError } = useGetDocumentQuery(docId ?? '', {
+  const { currentData, isLoading, isError } = useGetDocumentQuery(docId!, {
     skip: !open || !docId,
   })
 
@@ -20,7 +20,7 @@ export function DocumentSider() {
 
   return (
     <Drawer
-      title={data?.title ?? 'Источник'}
+      title={currentData?.title ?? 'Источник'}
       placement="right"
       width={560}
       open={open}
@@ -38,7 +38,7 @@ export function DocumentSider() {
         },
       }}
     >
-      <div className={styles.content}>
+      <div key={docId ?? 'empty'} className={styles.content}>
         {!docId && (
           <div className={styles.empty}>
             <Empty description="Выберите источник из списка в ответе" />
@@ -51,7 +51,7 @@ export function DocumentSider() {
           </div>
         )}
 
-        {docId && isError && (
+        {docId && isError && !isLoading && (
           <Alert
             type="error"
             showIcon
@@ -60,19 +60,19 @@ export function DocumentSider() {
           />
         )}
 
-        {docId && data && !isLoading && (
+        {docId && currentData && !isLoading && (
           <>
             <div className={styles.meta}>
-              <Text type="secondary">Год: {data.year}</Text>
-              {data.lang && <Text type="secondary">Язык: {data.lang}</Text>}
-              {data.source_path && (
-                <Text type="secondary" copyable={{ text: data.source_path }}>
-                  Файл: {data.source_path}
+              <Text type="secondary">Год: {currentData.year}</Text>
+              {currentData.lang && <Text type="secondary">Язык: {currentData.lang}</Text>}
+              {currentData.source_path && (
+                <Text type="secondary" copyable={{ text: currentData.source_path }}>
+                  Файл: {currentData.source_path}
                 </Text>
               )}
-              <Text type="secondary">ID: {data.doc_id}</Text>
+              <Text type="secondary">ID: {currentData.doc_id}</Text>
             </div>
-            <Paragraph className={styles.text}>{data.text}</Paragraph>
+            <Paragraph className={styles.text}>{currentData.text}</Paragraph>
           </>
         )}
       </div>

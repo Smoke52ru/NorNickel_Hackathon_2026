@@ -33,7 +33,9 @@ export const baseApi = createApi({
           return { data: doc }
         }
 
-        const result = await baseQuery({ url: `/document/${encodeURIComponent(docId)}` })
+        const result = await baseQuery({
+          url: `/document/${encodeURIComponent(docId)}`,
+        })
         if (result.error) {
           return { error: result.error }
         }
