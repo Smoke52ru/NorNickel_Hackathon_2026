@@ -1,4 +1,5 @@
 .env
+.env.old
 
 data/raw/
 data/processed/
