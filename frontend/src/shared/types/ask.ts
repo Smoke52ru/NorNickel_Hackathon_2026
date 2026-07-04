@@ -56,12 +56,19 @@ export interface Contradiction {
   sources: string[]
 }
 
+export interface Gap {
+  material: string
+  process: string
+  reason: string
+  score: number
+}
+
 export interface AskResponse {
   answer: string
   answer_links?: AnswerLink[]
   sources: Source[]
   confidence: Confidence
   graph: GraphData
-  gaps: string[]
+  gaps: Gap[]
   contradictions: Contradiction[]
 }

@@ -1,7 +1,10 @@
-import { Alert } from 'antd'
+import { Alert, Typography } from 'antd'
+import type { Gap } from '@/shared/types/ask'
+
+const { Text } = Typography
 
 interface GapsAlertProps {
-  gaps: string[]
+  gaps: Gap[]
 }
 
 export function GapsAlert({ gaps }: GapsAlertProps) {
@@ -15,7 +18,13 @@ export function GapsAlert({ gaps }: GapsAlertProps) {
       description={
         <ul style={{ margin: 0, paddingLeft: 20 }}>
           {gaps.map((gap) => (
-            <li key={gap}>{gap}</li>
+            <li key={`${gap.material}-${gap.process}`}>
+              <Text strong>
+                {gap.material} × {gap.process}
+              </Text>
+              <br />
+              <Text type="secondary">{gap.reason}</Text>
+            </li>
           ))}
         </ul>
       }
