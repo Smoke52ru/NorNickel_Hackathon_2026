@@ -1,15 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useAskQuestionMutation } from '@/shared/api/baseApi'
-import { USE_MOCK } from '@/shared/config/env'
 import type { AskResponse } from '@/shared/types/ask'
 import type { SearchFilters } from '@/shared/types/filters'
 import { useAppSelector } from '@/app/hooks'
 import { mapFiltersToApi } from '@/shared/utils/mapFiltersToApi'
-import mockResponse from '@/shared/mocks/askResponse.json'
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 export function useAsk() {
   const [askQuestion, { isLoading, isError, error }] = useAskQuestionMutation()
@@ -23,19 +17,6 @@ export function useAsk() {
         question,
         filters: mapFiltersToApi(activeFilters),
       }
-
-      if (USE_MOCK) {
-        await delay(500)
-        setData({
-          ...mockResponse,
-          answer: mockResponse.answer.replace(
-            'Для обессоливания',
-            `По запросу «${question}»: для обессоливания`,
-          ),
-        } as AskResponse)
-        return
-      }
-
       try {
         const result = await askQuestion(requestBody).unwrap()
         setData(result)

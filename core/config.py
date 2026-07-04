@@ -11,9 +11,6 @@ YANDEX_MODEL = os.getenv("YANDEX_MODEL", "yandexgpt-lite")
 
 GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
 
-# MOCK=1 — поднять API без данных/LLM/torch: /ask отдаёт готовый ответ (для фронта)
-MOCK = os.getenv("MOCK", "") not in ("", "0", "false", "False")
-
 # Локальная модель эмбеддингов для векторного поиска
 EMBED_MODEL = os.getenv("EMBED_MODEL", "intfloat/multilingual-e5-small")
 

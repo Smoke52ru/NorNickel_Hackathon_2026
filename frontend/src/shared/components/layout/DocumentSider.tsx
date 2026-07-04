@@ -2,9 +2,35 @@ import { Alert, Drawer, Empty, Spin, Typography } from 'antd'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { closeDocumentPanel } from '@/app/settingsSlice'
 import { useGetDocumentQuery } from '@/shared/api/baseApi'
+import type { ReactNode } from 'react'
+import type { Mention } from '@/shared/types/document'
 import styles from './DocumentSider.module.css'
 
 const { Text, Paragraph } = Typography
+
+function renderText(text: string, mentions?: Mention[]): ReactNode {
+  if (!mentions?.length) return text
+  const spans = [...mentions].filter((m) => m.end > m.start).sort((a, b) => a.start - b.start)
+  const parts: ReactNode[] = []
+  let cursor = 0
+  spans.forEach((m, i) => {
+    if (m.start < cursor) return
+    if (m.start > cursor) parts.push(text.slice(cursor, m.start))
+    parts.push(
+      <mark
+        key={i}
+        data-node-id={m.nodeId}
+        title={m.label ?? m.nodeId}
+        style={{ background: '#fff3bf', color: 'inherit', padding: '0 1px', borderRadius: 2 }}
+      >
+        {text.slice(m.start, m.end)}
+      </mark>,
+    )
+    cursor = m.end
+  })
+  if (cursor < text.length) parts.push(text.slice(cursor))
+  return parts
+}
 
 export function DocumentSider() {
   const dispatch = useAppDispatch()
@@ -72,7 +98,9 @@ export function DocumentSider() {
               )}
               <Text type="secondary">ID: {currentData.doc_id}</Text>
             </div>
-            <Paragraph className={styles.text}>{currentData.text}</Paragraph>
+            <Paragraph className={styles.text} style={{ whiteSpace: 'pre-wrap' }}>
+              {renderText(currentData.text, currentData.mentions)}
+            </Paragraph>
           </>
         )}
       </div>

@@ -75,7 +75,7 @@ export function AskPage() {
           type="error"
           showIcon
           message="Не удалось получить ответ"
-          description="Проверьте подключение к серверу или включите режим моков (VITE_USE_MOCK=true)."
+          description="Проверьте, что бэкенд запущен и доступен."
           action={
             <Button size="small" onClick={handleRetry}>
               Повторить
