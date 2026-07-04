@@ -25,7 +25,11 @@ vercel --prod   # production
 4. **Production Branch** → `dev` (Settings → Environments → Production).
 5. Deploy.
 
-Автодеплой включён **только для `dev`**: в `vercel.json` задано `"git.deploymentEnabled": { "dev": true }` — push в другие ветки игнорируется.
+Автодеплой включён **только для `dev`**:
+
+- `vercel.json` → `"git.deploymentEnabled": { "dev": true }` — push в другие ветки не деплоится.
+- **Production Branch** в Vercel → `dev`.
+- **Preview Deployments** отключены в настройках проекта.
 
 ## Как устроено
 
