@@ -57,7 +57,7 @@ export function SourcesList({ sources }: SourcesListProps) {
                   handleSourceClick(source.doc_id)
                 }}
               >
-                Открыть документ ({source.doc_id})
+                Открыть документ "{source.title}"
               </Link>
             </div>
           </List.Item>

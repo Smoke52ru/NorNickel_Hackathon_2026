@@ -120,7 +120,10 @@ def document(doc_id: str):
     и подсветки найденных сущностей прямо в тексте документа."""
     if config.MOCK:
         from core import mock
-        return mock.DOC
+        try:
+            return mock.get_document(doc_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Документ не найден")
     d = DOCS.get(doc_id)
     if not d:
         raise HTTPException(status_code=404, detail="Документ не найден")
