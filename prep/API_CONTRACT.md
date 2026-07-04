@@ -5,7 +5,15 @@
 ## POST /ask
 Запрос:
 ```json
-{ "question": "строка вопроса пользователя" }
+{ "question": "строка вопроса пользователя",
+  "filters": {                        // всё опционально
+    "geo": "ru|foreign",
+    "year_from": 2020, "year_to": 2025,
+    "types": ["Material", "Process"],
+    "numeric": { "property": "сульфаты", "op": "<", "value": 200 },
+    "materialKeyword": "никель",
+    "processKeyword": "электроэкстракция"
+  } }
 ```
 
 Ответ (HTTP 200 в штатных случаях, всегда одна и та же структура):
