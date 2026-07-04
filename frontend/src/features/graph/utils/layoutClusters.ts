@@ -7,7 +7,8 @@ export interface NodePosition {
 }
 
 const CLUSTER_SPACING = 500
-const INNER_RADIUS = 80
+const INNER_RADIUS = 110
+const NODE_RADIUS_STEP = 12
 
 export function layoutClusters(
   _graph: GraphData,
@@ -25,7 +26,7 @@ export function layoutClusters(
     const row = Math.floor(index / cols)
     const centerX = col * CLUSTER_SPACING
     const centerY = row * CLUSTER_SPACING
-    const radius = INNER_RADIUS + 8 * Math.sqrt(cluster.nodeIds.length)
+    const radius = INNER_RADIUS + NODE_RADIUS_STEP * Math.sqrt(cluster.nodeIds.length)
 
     if (cluster.nodeIds.length === 1) {
       positions.set(cluster.nodeIds[0], { x: centerX, y: centerY })

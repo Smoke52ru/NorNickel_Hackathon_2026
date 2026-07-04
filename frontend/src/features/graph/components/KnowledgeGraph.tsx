@@ -8,6 +8,7 @@ import { EDGE_STYLES, EDGE_FLAG_LABELS } from '../config/edgeStyles'
 import { getRelationLabel } from '../config/relationLabels'
 import { BRIDGE_EDGE_COLOR, getClusterBorderColor } from '../config/clusterStyles'
 import { detectClusters, isBridgeEdge } from '../utils/detectClusters'
+import { formatNodeLabel } from '../utils/formatNodeLabel'
 import { layoutClusters } from '../utils/layoutClusters'
 import styles from './KnowledgeGraph.module.css'
 
@@ -49,7 +50,7 @@ export function KnowledgeGraph({
     const groups = Object.fromEntries(
       clusterResult.clusters.map((cluster) => [
         `cluster_${cluster.id}`,
-        { borderWidth: 3, color: { border: getClusterBorderColor(cluster.id) } },
+        { borderWidth: 5, color: { border: getClusterBorderColor(cluster.id) } },
       ]),
     )
 
@@ -61,7 +62,7 @@ export function KnowledgeGraph({
         const fillColor = NODE_COLORS[node.type]
         return {
           id: node.id,
-          label: node.label,
+          label: formatNodeLabel(node.label),
           group: `cluster_${clusterId}`,
           x: pos?.x,
           y: pos?.y,
@@ -70,7 +71,14 @@ export function KnowledgeGraph({
             border: borderColor,
             highlight: { background: fillColor, border: '#000' },
           },
-          font: { color: token.colorText, size: 12, strokeWidth: 0 },
+          font: {
+            color: token.colorText,
+            size: 12,
+            strokeWidth: 0,
+            background: token.colorBgElevated,
+            multi: true,
+            vadjust: 0,
+          },
           title: `${NODE_TYPE_LABELS[node.type]}: ${node.label}`,
         }
       }),
@@ -111,12 +119,12 @@ export function KnowledgeGraph({
         physics: {
           enabled: true,
           barnesHut: {
-            gravitationalConstant: -5000,
-            springLength: 80,
-            springConstant: 0.06,
-            avoidOverlap: 0.5,
+            gravitationalConstant: -6000,
+            springLength: 140,
+            springConstant: 0.05,
+            avoidOverlap: 1,
           },
-          stabilization: { iterations: 200 },
+          stabilization: { iterations: 250 },
         },
         interaction: {
           hover: true,
@@ -133,6 +141,11 @@ export function KnowledgeGraph({
           shape: 'dot',
           size: 18,
           borderWidth: 2,
+          margin: { top: 20, right: 20, bottom: 20, left: 20 },
+          font: {
+            multi: true,
+            vadjust: 0,
+          },
         },
       },
     )
@@ -145,7 +158,14 @@ export function KnowledgeGraph({
       networkRef.current?.destroy()
       networkRef.current = null
     }
-  }, [graph, clusterResult, token.colorText, token.colorTextSecondary, token.colorBgContainer])
+  }, [
+    graph,
+    clusterResult,
+    token.colorText,
+    token.colorTextSecondary,
+    token.colorBgContainer,
+    token.colorBgElevated,
+  ])
 
   useEffect(() => {
     if (!networkRef.current || !focusedNodeId) return
