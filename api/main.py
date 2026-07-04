@@ -56,6 +56,8 @@ class Filters(BaseModel):
     year_to: int | None = None
     types: list[str] | None = None        # Material, Process, Equipment, Property, ...
     numeric: NumericFilter | None = None   # напр. {"property":"сульфаты","op":"<","value":200}
+    materialKeyword: str | None = None     # сузить до документов с этим материалом
+    processKeyword: str | None = None      # сузить до документов с этим процессом
 
 
 class AskRequest(BaseModel):
