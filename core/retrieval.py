@@ -9,15 +9,14 @@ def _tok(s):
     return re.findall(r"\w+", s.lower())
 
 
-# Пороги релевантности: если запрос не проходит ни по словам, ни по смыслу — честно «данных нет».
+# Пороги релевантности
 MIN_SCORE = 2.0    # BM25 (мусорный запрос даёт ~1.5, осмысленный — от 3)
 VEC_MIN = 0.80     # косинус для e5-small: релевантное/кросс-язык 0.83+, мусор ~0.75
 RRF_K = 60         # сглаживающая константа Reciprocal Rank Fusion
 
 
 def load_chunks(path):
-    """Развернуть documents.jsonl в плоский список кусков (порядок стабильный —
-    совпадает с порядком векторов в vectors.npy)."""
+    """Развернуть documents.jsonl в плоский список кусков"""
     chunks = []
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -31,7 +30,7 @@ def load_chunks(path):
 
 class HybridRetriever:
     """Гибридный поиск: BM25 (точные термины) + вектор (смысл, синонимы, кросс-язык),
-    объединённые через RRF. Если векторов нет (не собраны / эмбеддер недоступен) —
+    объединённые через RRF. Если векторов нет (не собраны / эмбеддер недоступен) -
     деградируем до чистого BM25."""
 
     def __init__(self, chunks, vectors=None, embedder=None):
@@ -64,11 +63,10 @@ class HybridRetriever:
                         vec_rank[i] = r
                         sims[i] = s
             except Exception:
-                pass  # эмбеддер недоступен — тихо остаёмся на BM25
+                pass
 
         scored = []
         for i in set(bm_rank) | set(vec_rank):
-            # гейт релевантности: кусок проходит, если релевантен хоть по одной ветке
             if bm[i] >= MIN_SCORE or sims.get(i, 0.0) >= VEC_MIN:
                 rrf = ((1 / (RRF_K + bm_rank[i]) if i in bm_rank else 0)
                        + (1 / (RRF_K + vec_rank[i]) if i in vec_rank else 0))
@@ -88,6 +86,6 @@ class HybridRetriever:
         if os.path.exists(vpath):
             import numpy as np
             v = np.load(vpath)
-            if len(v) == len(chunks):  # защита от рассинхрона данных и векторов
+            if len(v) == len(chunks):
                 vectors = v
         return cls(chunks, vectors=vectors, embedder=embedder)

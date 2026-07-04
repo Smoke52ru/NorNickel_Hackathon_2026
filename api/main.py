@@ -39,16 +39,27 @@ GRAPH, RETRIEVER, DOCS = _load()
 LLM = get_llm()
 
 
+class NumericFilter(BaseModel):
+    property: str
+    op: str = "<="                        # < <= > >= =
+    value: float
+
+
 class Filters(BaseModel):
     geo: str | None = None                # "ru" | "foreign"
     year_from: int | None = None
     year_to: int | None = None
     types: list[str] | None = None        # Material, Process, Equipment, Property, ...
+    numeric: NumericFilter | None = None   # напр. {"property":"сульфаты","op":"<","value":200}
 
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
     filters: Filters | None = None
+
+
+class CompareRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=2000)
 
 
 @app.get("/health")
@@ -68,6 +79,14 @@ def ask(req: AskRequest):
                           filters=req.filters.model_dump() if req.filters else None)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Ошибка генерации ответа: {e}")
+
+
+@app.post("/compare")
+def compare(req: CompareRequest):
+    """Сравнительная таблица источников по теме (год, гео, числа, вырезка)."""
+    if RETRIEVER is None:
+        return {"question": req.question, "rows": []}
+    return rag.compare(req.question, RETRIEVER, GRAPH)
 
 
 @app.get("/document/{doc_id}")
