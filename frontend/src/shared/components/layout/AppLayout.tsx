@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { AppHeader } from './AppHeader'
 import { AppFooter } from './AppFooter'
-import { SettingsDrawer } from './SettingsDrawer'
 import styles from './AppLayout.module.css'
 
 export function AppLayout() {
@@ -12,7 +11,6 @@ export function AppLayout() {
         <Outlet />
       </main>
       <AppFooter />
-      <SettingsDrawer />
     </div>
   )
 }
