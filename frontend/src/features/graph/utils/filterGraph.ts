@@ -1,5 +1,21 @@
-import type { GraphData } from '@/shared/types/ask'
-import type { SearchFilters } from '@/shared/types/filters'
+import type { GraphData, GraphNode } from '@/shared/types/ask'
+import { isAllNodeTypesSelected, type SearchFilters } from '@/shared/types/filters'
+
+function matchesKeyword(label: string, keyword: string): boolean {
+  if (!keyword.trim()) return true
+  return label.toLowerCase().includes(keyword.trim().toLowerCase())
+}
+
+function matchesGeography(
+  node: GraphNode & { geo?: string },
+  geography: SearchFilters['geography'],
+): boolean {
+  if (geography === 'all') return true
+  if (!node.geo) return true
+  if (geography === 'domestic') return node.geo === 'ru'
+  if (geography === 'foreign') return node.geo === 'foreign'
+  return true
+}
 
 export function filterGraph(
   graph: GraphData | null,
@@ -7,9 +23,29 @@ export function filterGraph(
 ): GraphData | null {
   if (!graph) return null
 
-  let nodes = graph.nodes
+  let nodes = graph.nodes.filter((node) => {
+    if (!matchesGeography(node, filters.geography)) return false
+    if (
+      filters.materialKeyword &&
+      node.type === 'Material' &&
+      !matchesKeyword(node.label, filters.materialKeyword)
+    ) {
+      return false
+    }
+    if (
+      filters.processKeyword &&
+      node.type === 'Process' &&
+      !matchesKeyword(node.label, filters.processKeyword)
+    ) {
+      return false
+    }
+    return true
+  })
 
-  if (filters.nodeTypes.length > 0) {
+  if (
+    filters.nodeTypes.length > 0 &&
+    !isAllNodeTypesSelected(filters.nodeTypes)
+  ) {
     nodes = nodes.filter((node) => filters.nodeTypes.includes(node.type))
   }
 

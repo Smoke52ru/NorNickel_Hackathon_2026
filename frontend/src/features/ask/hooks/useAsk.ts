@@ -2,7 +2,9 @@ import { useCallback, useState } from 'react'
 import { useAskQuestionMutation } from '@/shared/api/baseApi'
 import { USE_MOCK } from '@/shared/config/env'
 import type { AskResponse } from '@/shared/types/ask'
+import type { SearchFilters } from '@/shared/types/filters'
 import { useAppSelector } from '@/app/hooks'
+import { mapFiltersToApi } from '@/shared/utils/mapFiltersToApi'
 import mockResponse from '@/shared/mocks/askResponse.json'
 
 function delay(ms: number) {
@@ -15,10 +17,11 @@ export function useAsk() {
   const filters = useAppSelector((state) => state.settings.filters)
 
   const ask = useCallback(
-    async (question: string) => {
+    async (question: string, filtersOverride?: SearchFilters) => {
+      const activeFilters = filtersOverride ?? filters
       const requestBody = {
         question,
-        filters,
+        filters: mapFiltersToApi(activeFilters),
       }
 
       if (USE_MOCK) {

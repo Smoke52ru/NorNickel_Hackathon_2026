@@ -6,6 +6,7 @@ import type { GraphData } from '@/shared/types/ask'
 import { NODE_COLORS, NODE_TYPE_LABELS } from '../config/nodeStyles'
 import { EDGE_STYLES, EDGE_FLAG_LABELS } from '../config/edgeStyles'
 import { getRelationLabel } from '../config/relationLabels'
+import { layoutComponents } from '../utils/layoutComponents'
 import styles from './KnowledgeGraph.module.css'
 
 interface KnowledgeGraphProps {
@@ -36,18 +37,25 @@ export function KnowledgeGraph({
       return
     }
 
+    const positions = layoutComponents(graph)
+
     const nodes = new DataSet(
-      graph.nodes.map((node) => ({
-        id: node.id,
-        label: node.label,
-        color: {
-          background: NODE_COLORS[node.type],
-          border: NODE_COLORS[node.type],
-          highlight: { background: NODE_COLORS[node.type], border: '#000' },
-        },
-        font: { color: token.colorText, size: 12, strokeWidth: 0 },
-        title: `${NODE_TYPE_LABELS[node.type]}: ${node.label}`,
-      })),
+      graph.nodes.map((node) => {
+        const pos = positions.get(node.id)
+        return {
+          id: node.id,
+          label: node.label,
+          x: pos?.x,
+          y: pos?.y,
+          color: {
+            background: NODE_COLORS[node.type],
+            border: NODE_COLORS[node.type],
+            highlight: { background: NODE_COLORS[node.type], border: '#000' },
+          },
+          font: { color: token.colorText, size: 12, strokeWidth: 0 },
+          title: `${NODE_TYPE_LABELS[node.type]}: ${node.label}`,
+        }
+      }),
     )
 
     const edges = new DataSet(
@@ -82,11 +90,12 @@ export function KnowledgeGraph({
         physics: {
           enabled: true,
           barnesHut: {
-            gravitationalConstant: -3000,
-            springLength: 120,
-            springConstant: 0.04,
+            gravitationalConstant: -5000,
+            springLength: 80,
+            springConstant: 0.06,
+            avoidOverlap: 0.5,
           },
-          stabilization: { iterations: 150 },
+          stabilization: { iterations: 200 },
         },
         interaction: {
           hover: true,
@@ -106,6 +115,10 @@ export function KnowledgeGraph({
         },
       },
     )
+
+    networkRef.current.once('stabilizationIterationsDone', () => {
+      networkRef.current?.setOptions({ physics: { enabled: false } })
+    })
 
     return () => {
       networkRef.current?.destroy()

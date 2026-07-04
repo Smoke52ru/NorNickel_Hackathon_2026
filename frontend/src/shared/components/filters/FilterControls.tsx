@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react'
 import {
-  Button,
   Checkbox,
   Divider,
-  Drawer,
   Input,
   Select,
   Slider,
@@ -11,22 +8,18 @@ import {
   Switch,
   Typography,
 } from 'antd'
-import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import {
-  closeSettingsDrawer,
-  resetFilters,
-  setFilters,
-} from '@/app/settingsSlice'
 import { NODE_TYPE_LABELS } from '@/features/graph/config/nodeStyles'
 import type { NodeType } from '@/shared/types/ask'
-import {
-  DEFAULT_FILTERS,
-  type ConfidenceFilter,
-  type GeographyFilter,
-  type SearchFilters,
+import type {
+  ConfidenceFilter,
+  GeographyFilter,
+  SearchFilters,
 } from '@/shared/types/filters'
 
 const { Text } = Typography
+
+export const YEAR_MIN = 1990
+export const YEAR_MAX = 2026
 
 const NODE_TYPE_OPTIONS = (
   Object.keys(NODE_TYPE_LABELS) as NodeType[]
@@ -35,70 +28,21 @@ const NODE_TYPE_OPTIONS = (
   value: type,
 }))
 
-const YEAR_MIN = 1990
-const YEAR_MAX = 2026
+export interface FilterControlsProps {
+  value: SearchFilters
+  onChange: (next: SearchFilters) => void
+  yearRange: [number, number]
+  onYearRangeChange: (range: [number, number]) => void
+}
 
-export function SettingsDrawer() {
-  const dispatch = useAppDispatch()
-  const open = useAppSelector((state) => state.settings.settingsDrawerOpen)
-  const savedFilters = useAppSelector((state) => state.settings.filters)
-  const [draft, setDraft] = useState<SearchFilters>(savedFilters)
-  const [yearRange, setYearRange] = useState<[number, number]>([
-    savedFilters.yearFrom ?? YEAR_MIN,
-    savedFilters.yearTo ?? YEAR_MAX,
-  ])
-
-  useEffect(() => {
-    if (open) {
-      setDraft(savedFilters)
-      setYearRange([
-        savedFilters.yearFrom ?? YEAR_MIN,
-        savedFilters.yearTo ?? YEAR_MAX,
-      ])
-    }
-  }, [open, savedFilters])
-
-  const handleClose = () => {
-    dispatch(closeSettingsDrawer())
-  }
-
-  const handleApply = () => {
-    dispatch(
-      setFilters({
-        ...draft,
-        yearFrom: yearRange[0] === YEAR_MIN ? null : yearRange[0],
-        yearTo: yearRange[1] === YEAR_MAX ? null : yearRange[1],
-      }),
-    )
-    dispatch(closeSettingsDrawer())
-  }
-
-  const handleReset = () => {
-    setDraft(DEFAULT_FILTERS)
-    setYearRange([YEAR_MIN, YEAR_MAX])
-    dispatch(resetFilters())
-  }
-
+export function FilterControls({
+  value,
+  onChange,
+  yearRange,
+  onYearRangeChange,
+}: FilterControlsProps) {
   return (
-    <Drawer
-      title="Настройки"
-      placement="right"
-      width={360}
-      open={open}
-      onClose={handleClose}
-      footer={
-        <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-          <Button onClick={handleReset}>Сбросить</Button>
-          <Button type="primary" onClick={handleApply}>
-            Применить
-          </Button>
-        </Space>
-      }
-    >
-      <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-        Фильтры поиска и отображения графа
-      </Text>
-
+    <>
       <Divider plain>
         <Text type="secondary">Поиск</Text>
       </Divider>
@@ -109,9 +53,9 @@ export function SettingsDrawer() {
         </Text>
         <Checkbox.Group
           options={NODE_TYPE_OPTIONS}
-          value={draft.nodeTypes}
+          value={value.nodeTypes}
           onChange={(values) =>
-            setDraft({ ...draft, nodeTypes: values as NodeType[] })
+            onChange({ ...value, nodeTypes: values as NodeType[] })
           }
         />
       </div>
@@ -122,10 +66,8 @@ export function SettingsDrawer() {
         </Text>
         <Select
           style={{ width: '100%' }}
-          value={draft.geography}
-          onChange={(value: GeographyFilter) =>
-            setDraft({ ...draft, geography: value })
-          }
+          value={value.geography}
+          onChange={(geo: GeographyFilter) => onChange({ ...value, geography: geo })}
           options={[
             { label: 'Вся практика', value: 'all' },
             { label: 'Отечественная', value: 'domestic' },
@@ -143,7 +85,7 @@ export function SettingsDrawer() {
           min={YEAR_MIN}
           max={YEAR_MAX}
           value={yearRange}
-          onChange={(value) => setYearRange(value as [number, number])}
+          onChange={(range) => onYearRangeChange(range as [number, number])}
           marks={{ [YEAR_MIN]: `${YEAR_MIN}`, [YEAR_MAX]: `${YEAR_MAX}` }}
         />
       </div>
@@ -154,9 +96,9 @@ export function SettingsDrawer() {
         </Text>
         <Select
           style={{ width: '100%' }}
-          value={draft.minConfidence}
-          onChange={(value: ConfidenceFilter) =>
-            setDraft({ ...draft, minConfidence: value })
+          value={value.minConfidence}
+          onChange={(minConfidence: ConfidenceFilter) =>
+            onChange({ ...value, minConfidence })
           }
           options={[
             { label: 'Низкая и выше', value: 'low' },
@@ -172,9 +114,9 @@ export function SettingsDrawer() {
         </Text>
         <Input
           placeholder="Например: никель"
-          value={draft.materialKeyword}
+          value={value.materialKeyword}
           onChange={(e) =>
-            setDraft({ ...draft, materialKeyword: e.target.value })
+            onChange({ ...value, materialKeyword: e.target.value })
           }
         />
       </div>
@@ -185,9 +127,9 @@ export function SettingsDrawer() {
         </Text>
         <Input
           placeholder="Например: электроэкстракция"
-          value={draft.processKeyword}
+          value={value.processKeyword}
           onChange={(e) =>
-            setDraft({ ...draft, processKeyword: e.target.value })
+            onChange({ ...value, processKeyword: e.target.value })
           }
         />
       </div>
@@ -200,22 +142,20 @@ export function SettingsDrawer() {
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Text>Показывать противоречия</Text>
           <Switch
-            checked={draft.showContradictions}
+            checked={value.showContradictions}
             onChange={(checked) =>
-              setDraft({ ...draft, showContradictions: checked })
+              onChange({ ...value, showContradictions: checked })
             }
           />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <Text>Показывать пробелы</Text>
           <Switch
-            checked={draft.showGaps}
-            onChange={(checked) =>
-              setDraft({ ...draft, showGaps: checked })
-            }
+            checked={value.showGaps}
+            onChange={(checked) => onChange({ ...value, showGaps: checked })}
           />
         </div>
       </Space>
-    </Drawer>
+    </>
   )
 }
