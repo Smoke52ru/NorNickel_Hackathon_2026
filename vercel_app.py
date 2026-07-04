@@ -1,11 +1,17 @@
 """Точка входа FastAPI для Vercel.
 
-На serverless по умолчанию MOCK=1 — без torch, FAISS и data/processed/.
-Маршруты api.main доступны с префиксом /api (как в dev-прокси Vite).
+dev  — MOCK=1, готовые ответы без данных/LLM.
+master — MOCK=0, реальный RAG (data/vercel/, LLM и эмбеддинги через API).
 """
 import os
 
-os.environ.setdefault("MOCK", "1")
+_branch = os.environ.get("VERCEL_GIT_COMMIT_REF", "")
+if _branch == "master":
+    os.environ.setdefault("MOCK", "0")
+    os.environ.setdefault("EMBEDDER", "yandex")
+    os.environ.setdefault("DATA_PROCESSED", "data/vercel")
+else:
+    os.environ.setdefault("MOCK", "1")
 
 from fastapi import FastAPI  # noqa: E402
 
@@ -21,4 +27,8 @@ app.mount("/api", api_app)
 
 @app.get("/")
 def root():
-    return {"service": "nauchny-klubok", "mock": os.environ.get("MOCK", "1") != "0"}
+    return {
+        "service": "nauchny-klubok",
+        "branch": _branch or None,
+        "mock": os.environ.get("MOCK", "1") != "0",
+    }
