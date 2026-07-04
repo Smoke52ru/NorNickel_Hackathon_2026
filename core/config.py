@@ -11,5 +11,9 @@ YANDEX_MODEL = os.getenv("YANDEX_MODEL", "yandexgpt-lite")
 
 GIGACHAT_CREDENTIALS = os.getenv("GIGACHAT_CREDENTIALS")
 
+# Эмбеддер для векторного поиска: local | yandex | gigachat
+EMBEDDER = os.getenv("EMBEDDER", "local")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "intfloat/multilingual-e5-small")
+
 DATA_RAW = os.getenv("DATA_RAW", "data/raw")
 DATA_PROCESSED = os.getenv("DATA_PROCESSED", "data/processed")
