@@ -1,0 +1,111 @@
+{
+  "answer": "Для обессоливания шахтных вод с содержанием сульфатов, хлоридов, Ca, Mg, Na по 200–300 мг/л и требуемым сухим остатком ≤1000 мг/дм³ в мировой и отечественной практике применяются обратный осмос, ионный обмен и комбинированные схемы с предварительной коагуляцией. Обратный осмос эффективно снижает общий минерализационный показатель, однако требует предварительного удаления взвешенных частиц. Ионообменные установки показывают высокую селективность по кальцию и магнию, но нуждаются в регенерации. При электроэкстракции никеля оптимальная скорость циркуляции католита по разным источникам варьируется от 0,3 до 1,2 м/с, что указывает на необходимость учёта конструкции ванны.",
+  "answer_links": [
+    { "nodeId": "n5", "start": 179, "end": 193 },
+    { "nodeId": "n6", "start": 195, "end": 207 },
+    { "nodeId": "n15", "start": 502, "end": 526 }
+  ],
+  "sources": [
+    {
+      "doc_id": "obzor_ochistka_vod",
+      "title": "Методы очистки шахтных вод: обзор отечественной и зарубежной практики",
+      "year": 2021,
+      "snippet": "Обратный осмос применяется при сульфатах 200–400 мг/л, обеспечивая сухой остаток до 800 мг/дм³ при правильной предварительной подготовке."
+    },
+    {
+      "doc_id": "statya_desalination_2023",
+      "title": "Комбинированные схемы обессоливания на обогатительных фабриках",
+      "year": 2023,
+      "snippet": "Схема «коагуляция → фильтрация → РО» показала КПД 92% при исходной минерализации 1200 мг/дм³."
+    },
+    {
+      "doc_id": "obzor_electro_ni",
+      "title": "Циркуляция католита при электроэкстракции никеля",
+      "year": 2022,
+      "snippet": "Оптимальная скорость потока католита 0,5–0,8 м/с для диафрагменных ячеек с никелевым электролитом."
+    }
+  ],
+  "confidence": "high",
+  "graph": {
+    "nodes": [
+      { "id": "n1", "label": "Шахтные воды", "type": "Material" },
+      { "id": "n2", "label": "Сульфаты 200–300 мг/л", "type": "Property" },
+      { "id": "n3", "label": "Хлориды 200–300 мг/л", "type": "Property" },
+      { "id": "n4", "label": "Сухой остаток ≤1000 мг/дм³", "type": "Property" },
+      { "id": "n5", "label": "Обратный осмос", "type": "Process" },
+      { "id": "n6", "label": "Ионный обмен", "type": "Process" },
+      { "id": "n7", "label": "Коагуляция", "type": "Process" },
+      { "id": "n8", "label": "Установка РО", "type": "Equipment" },
+      { "id": "n9", "label": "Ионообменная колонна", "type": "Equipment" },
+      { "id": "n10", "label": "Обогатительная фабрика", "type": "Facility" },
+      { "id": "n11", "label": "Опыт обессоливания №14", "type": "Experiment" },
+      { "id": "n12", "label": "Обзор очистки вод 2021", "type": "Publication" },
+      { "id": "n13", "label": "Иванов А.П.", "type": "Expert" },
+      { "id": "n14", "label": "Никель", "type": "Material" },
+      { "id": "n15", "label": "Электроэкстракция", "type": "Process" },
+      { "id": "n16", "label": "Католит", "type": "Material" },
+      { "id": "n17", "label": "Скорость потока 0,5 м/с", "type": "Property" },
+      { "id": "n18", "label": "Скорость потока 1,2 м/с", "type": "Property" },
+      { "id": "n19", "label": "Ванна электроэкстракции", "type": "Equipment" },
+      { "id": "n20", "label": "Диафрагменная ячейка", "type": "Equipment" },
+      { "id": "n21", "label": "Цех электролиза", "type": "Facility" },
+      { "id": "n22", "label": "Опыт Ni-EW-07", "type": "Experiment" },
+      { "id": "n23", "label": "Обзор электроэкстракции Ni", "type": "Publication" },
+      { "id": "n24", "label": "Петрова Е.В.", "type": "Expert" },
+      { "id": "n25", "label": "Холодный климат", "type": "Property" }
+    ],
+    "edges": [
+      { "from": "n1", "to": "n2", "label": "has_property", "flag": "normal" },
+      { "from": "n1", "to": "n3", "label": "has_property", "flag": "normal" },
+      { "from": "n5", "to": "n1", "label": "uses_material", "flag": "normal" },
+      { "from": "n5", "to": "n4", "label": "produces_output", "flag": "normal" },
+      { "from": "n6", "to": "n1", "label": "uses_material", "flag": "normal" },
+      { "from": "n7", "to": "n5", "label": "operates_at_condition", "flag": "normal" },
+      { "from": "n8", "to": "n5", "label": "part_of", "flag": "normal" },
+      { "from": "n9", "to": "n6", "label": "part_of", "flag": "normal" },
+      { "from": "n10", "to": "n8", "label": "part_of", "flag": "normal" },
+      { "from": "n11", "to": "n5", "label": "validated_by", "flag": "normal" },
+      { "from": "n12", "to": "n5", "label": "described_in", "flag": "normal" },
+      { "from": "n13", "to": "n5", "label": "expert_in", "flag": "normal" },
+      { "from": "n15", "to": "n14", "label": "uses_material", "flag": "normal" },
+      { "from": "n15", "to": "n16", "label": "uses_material", "flag": "normal" },
+      { "from": "n19", "to": "n15", "label": "part_of", "flag": "normal" },
+      { "from": "n20", "to": "n19", "label": "part_of", "flag": "normal" },
+      { "from": "n21", "to": "n19", "label": "part_of", "flag": "normal" },
+      { "from": "n22", "to": "n15", "label": "validated_by", "flag": "normal" },
+      { "from": "n23", "to": "n15", "label": "described_in", "flag": "normal" },
+      { "from": "n24", "to": "n15", "label": "expert_in", "flag": "normal" },
+      { "from": "n15", "to": "n17", "label": "produces_output", "flag": "normal" },
+      { "from": "n17", "to": "n18", "label": "contradicts", "flag": "contradiction" },
+      { "from": "n23", "to": "n17", "label": "described_in", "flag": "normal" },
+      { "from": "n23", "to": "n18", "label": "described_in", "flag": "normal" },
+      { "from": "n25", "to": "n14", "label": "operates_at_condition", "flag": "gap" },
+      { "from": "n14", "to": "n25", "label": "uses_material", "flag": "gap" },
+      { "from": "n6", "to": "n4", "label": "produces_output", "flag": "normal" },
+      { "from": "n11", "to": "n10", "label": "part_of", "flag": "normal" },
+      { "from": "n22", "to": "n21", "label": "part_of", "flag": "normal" },
+      { "from": "n12", "to": "n13", "label": "described_in", "flag": "normal" },
+      { "from": "n2", "to": "n4", "label": "operates_at_condition", "flag": "normal" }
+    ]
+  },
+  "gaps": [
+    {
+      "material": "никелевая руда",
+      "process": "кучное выщелачивание",
+      "reason": "нет экспериментов для холодного климата",
+      "score": 4
+    },
+    {
+      "material": "шахтные воды",
+      "process": "обратный осмос + ионный обмен",
+      "reason": "отсутствуют данные при температуре ниже −20 °C",
+      "score": 3
+    }
+  ],
+  "contradictions": [
+    {
+      "about": "оптимальная скорость циркуляции католита при электроэкстракции никеля",
+      "sources": ["obzor_electro_ni", "statya_desalination_2023"]
+    }
+  ]
+}
