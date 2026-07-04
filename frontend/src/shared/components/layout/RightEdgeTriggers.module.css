@@ -12,14 +12,14 @@
 .trigger {
   display: flex;
   align-items: center;
+  align-self: flex-end;
   justify-content: center;
   width: 32px;
-  height: 96px;
+  height: 108px;
   padding: 0;
   border: none;
   border-radius: 8px 0 0 8px;
   background: var(--ant-color-primary);
-  color: #fff;
   cursor: pointer;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
   transition: width 0.2s ease, box-shadow 0.2s ease;
@@ -29,6 +29,10 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   position: relative;
+}
+
+.trigger * {
+  color: #fff;
 }
 
 .trigger:hover {
