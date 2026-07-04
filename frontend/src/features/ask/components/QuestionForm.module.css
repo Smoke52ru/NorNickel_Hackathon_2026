@@ -2,10 +2,21 @@
   margin-bottom: 24px;
 }
 
+.inputRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.textarea {
+  flex: 1;
+  min-width: 0;
+}
+
 .submitBtn {
-  height: auto !important;
-  min-height: 54px;
-  align-self: stretch;
+  flex-shrink: 0;
+  margin-top: 0;
 }
 
 .examples {
@@ -17,7 +28,7 @@
 }
 
 .examplesLabel {
-  color: #8c8c8c;
+  color: var(--ant-color-text-secondary);
   font-size: 13px;
   white-space: nowrap;
 }

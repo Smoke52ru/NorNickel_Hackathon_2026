@@ -1,4 +1,4 @@
-import { Button, Tooltip, theme } from 'antd'
+import { Button, Tooltip } from 'antd'
 import {
   MoonOutlined,
   SettingOutlined,
@@ -12,16 +12,8 @@ export function AppHeader() {
   const dispatch = useAppDispatch()
   const themeMode = useAppSelector((state) => state.settings.theme)
   const isDark = themeMode === 'dark'
-  const { token } = theme.useToken()
-
   return (
-    <header
-      className={styles.header}
-      style={{
-        backgroundColor: token.colorBgContainer,
-        borderBottomColor: token.colorBorderSecondary,
-      }}
-    >
+    <header className={styles.header}>
       <div className={styles.brand}>
         <span className={styles.brandName}>kickout</span>
         <span className={styles.brandTagline}>Граф знаний R&D</span>
