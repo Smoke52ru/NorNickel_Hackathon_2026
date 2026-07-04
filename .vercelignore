@@ -1,0 +1,12 @@
+.venv
+.venv-vercel-test
+venv
+__pycache__
+*.pyc
+data/raw
+data/processed
+*.pkl
+*.faiss
+frontend/node_modules
+frontend/dist
+.git
