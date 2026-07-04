@@ -37,6 +37,7 @@ export interface GraphNode {
   id: string
   label: string
   type: NodeType
+  geo?: string
 }
 
 export interface GraphEdge {

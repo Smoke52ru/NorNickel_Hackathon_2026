@@ -8,7 +8,12 @@
   gap: 16px;
   padding: 0 24px;
   height: 64px;
-  background-color: var(--ant-color-bg-container);
+  background: color-mix(
+    in srgb,
+    var(--ant-color-primary) 12%,
+    var(--ant-color-bg-container)
+  );
+  color: var(--ant-color-text);
   border-bottom: 1px solid var(--ant-color-border-secondary);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--ant-color-text) 4%, transparent);
 }
@@ -25,12 +30,13 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  color: var(--ant-color-text);
 }
 
 .brandTagline {
   font-size: 0.75rem;
   line-height: 1.2;
-  opacity: 0.65;
+  color: var(--ant-color-text-secondary);
 }
 
 .actions {
@@ -38,4 +44,17 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.actionBtn {
+  color: var(--ant-color-text) !important;
+}
+
+.actionBtn:hover {
+  color: var(--ant-color-primary) !important;
+  background: color-mix(
+    in srgb,
+    var(--ant-color-primary) 8%,
+    transparent
+  ) !important;
 }
