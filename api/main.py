@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from core import config, rag
+from core.embeddings import get_embedder
 from core.graph_store import NetworkxGraphStore
 from core.llm import get_llm
-from core.retrieval import BM25Retriever
+from core.retrieval import HybridRetriever
 
 app = FastAPI(title="Научный клубок — API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -20,9 +21,13 @@ def _load():
     graph_path = os.path.join(config.DATA_PROCESSED, "graph.pkl")
     docs_path = os.path.join(config.DATA_PROCESSED, "documents.jsonl")
     graph = NetworkxGraphStore().load(graph_path) if os.path.exists(graph_path) else None
-    retriever, docs = None, {}
+    try:
+        embedder = get_embedder()
+    except Exception:
+        embedder = None  # эмбеддер недоступен — поиск деградирует до BM25
+    retriever = HybridRetriever.from_processed(config.DATA_PROCESSED, embedder=embedder)
+    docs = {}
     if os.path.exists(docs_path):
-        retriever = BM25Retriever.from_jsonl(docs_path)
         with open(docs_path, encoding="utf-8") as f:
             for line in f:
                 d = json.loads(line)
@@ -55,7 +60,7 @@ def health():
 @app.post("/ask")
 def ask(req: AskRequest):
     if RETRIEVER is None:
-        return {"answer": "База знаний не собрана. Запусти parse и build (см. README).",
+        return {"answer": "База знаний не собрана. Запусти parse и build.",
                 "answer_links": [], "sources": [], "confidence": "low",
                 "graph": {"nodes": [], "edges": []}, "gaps": [], "contradictions": []}
     try:
