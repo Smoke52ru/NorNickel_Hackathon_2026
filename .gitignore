@@ -1,13 +1,10 @@
-# Секреты
 .env
 
-# Данные (не храним в git — большие, лежат локально / на облаке)
 data/raw/
 data/processed/
 *.jsonl
 !data/sample/**
 
-# Python
 __pycache__/
 *.py[cod]
 .venv/
@@ -15,17 +12,14 @@ venv/
 *.egg-info/
 .pytest_cache/
 
-# Node / frontend
 node_modules/
 frontend/dist/
 frontend/build/
 
-# IDE / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Модели / индексы (пересобираемые артефакты)
 *.faiss
 *.pkl
