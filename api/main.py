@@ -1,44 +1,83 @@
-from fastapi import FastAPI
+import json
+import os
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from core import config, rag
+from core.graph_store import NetworkxGraphStore
+from core.llm import get_llm
+from core.retrieval import BM25Retriever
 
 app = FastAPI(title="Научный клубок — API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
+def _load():
+    """Артефакты сборки грузим один раз при старте: граф, поисковый индекс и документы.
+    Если сборки не было — API поднимется и честно ответит, что база пуста."""
+    graph_path = os.path.join(config.DATA_PROCESSED, "graph.pkl")
+    docs_path = os.path.join(config.DATA_PROCESSED, "documents.jsonl")
+    graph = NetworkxGraphStore().load(graph_path) if os.path.exists(graph_path) else None
+    retriever, docs = None, {}
+    if os.path.exists(docs_path):
+        retriever = BM25Retriever.from_jsonl(docs_path)
+        with open(docs_path, encoding="utf-8") as f:
+            for line in f:
+                d = json.loads(line)
+                docs[d["doc_id"]] = d
+    return graph, retriever, docs
+
+
+GRAPH, RETRIEVER, DOCS = _load()
+LLM = get_llm()
+
+
+class Filters(BaseModel):
+    geo: str | None = None                # "ru" | "foreign"
+    year_from: int | None = None
+    year_to: int | None = None
+    types: list[str] | None = None        # Material, Process, Equipment, Property, ...
+
+
 class AskRequest(BaseModel):
-    question: str
+    question: str = Field(min_length=3, max_length=2000)
+    filters: Filters | None = None
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "graph": GRAPH.stats() if GRAPH else None,
+            "documents": len(DOCS)}
 
 
 @app.post("/ask")
 def ask(req: AskRequest):
-    # TODO: заменить мок на core.rag.answer(...)
-    return {
-        "answer": f"[мок] Ответ на вопрос: «{req.question}».",
-        "sources": [
-            {"doc_id": "obzor_ochistka_vod", "title": "Методы очистки шахтных вод",
-             "year": 2021, "snippet": "Обратный осмос применяется при сульфатах…"},
-        ],
-        "confidence": "medium",
-        "graph": {
-            "nodes": [
-                {"id": "n1", "label": "Шахтные воды", "type": "Material"},
-                {"id": "n2", "label": "Обратный осмос", "type": "Process"},
-                {"id": "n3", "label": "Сухой остаток ≤1000 мг/дм³", "type": "Property"},
-            ],
-            "edges": [
-                {"from": "n2", "to": "n1", "label": "uses_material", "flag": "normal"},
-                {"from": "n2", "to": "n3", "label": "produces_output", "flag": "normal"},
-            ],
-        },
-        "gaps": ["нет данных: холодный климат + кучное выщелачивание + никелевая руда"],
-        "contradictions": [
-            {"about": "оптимальная скорость циркуляции католита",
-             "sources": ["obzor_electro_ni", "statya_2024"]},
-        ],
-    }
+    if RETRIEVER is None:
+        return {"answer": "База знаний не собрана. Запусти parse и build (см. README).",
+                "answer_links": [], "sources": [], "confidence": "low",
+                "graph": {"nodes": [], "edges": []}, "gaps": [], "contradictions": []}
+    try:
+        return rag.answer(req.question, RETRIEVER, GRAPH, LLM,
+                          filters=req.filters.model_dump() if req.filters else None)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Ошибка генерации ответа: {e}")
+
+
+@app.get("/document/{doc_id}")
+def document(doc_id: str):
+    """Полный текст и метаданные документа — для перехода из источников и узлов Publication."""
+    d = DOCS.get(doc_id)
+    if not d:
+        raise HTTPException(status_code=404, detail="Документ не найден")
+    return {"doc_id": d["doc_id"], "title": d.get("title", ""), "year": d.get("year"),
+            "lang": d.get("lang"), "source_path": d.get("source_path"), "text": d.get("text", "")}
+
+
+@app.get("/graph")
+def graph_overview(limit: int = 150):
+    """Обзорная «карта знаний»: самые связанные узлы всего графа."""
+    if GRAPH is None:
+        return {"nodes": [], "edges": []}
+    return GRAPH.overview(max_nodes=limit)

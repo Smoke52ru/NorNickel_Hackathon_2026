@@ -18,6 +18,7 @@ class YandexLLM(LLMClient):
         self.model = model
 
     def generate(self, prompt, system=None, temperature=0.3, max_tokens=2000):
+        import time
         import requests
         messages = []
         if system:
@@ -30,9 +31,13 @@ class YandexLLM(LLMClient):
             "messages": messages,
         }
         headers = {"Authorization": f"Api-Key {self.api_key}", "x-folder-id": self.folder}
-        r = requests.post(self.URL, headers=headers, json=body, timeout=60)
-        r.raise_for_status()
-        return r.json()["result"]["alternatives"][0]["message"]["text"]
+        for attempt in range(4):
+            r = requests.post(self.URL, headers=headers, json=body, timeout=60)
+            if r.status_code in (429, 500, 503) and attempt < 3:
+                time.sleep(2 ** attempt)
+                continue
+            r.raise_for_status()
+            return r.json()["result"]["alternatives"][0]["message"]["text"]
 
 
 class GigaChatLLM(LLMClient):
