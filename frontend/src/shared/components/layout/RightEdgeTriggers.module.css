@@ -1,0 +1,57 @@
+.container {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  justify-content: center;
+  width: 32px;
+  height: 108px;
+  padding: 0;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  background: var(--ant-color-primary);
+  cursor: pointer;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  transition: width 0.2s ease, box-shadow 0.2s ease;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.trigger * {
+  color: #fff;
+}
+
+.trigger:hover {
+  width: 40px;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--ant-color-primary-border);
+  outline-offset: 2px;
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #52c41a;
+  box-shadow: 0 0 0 2px var(--ant-color-primary);
+}

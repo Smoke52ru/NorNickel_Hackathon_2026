@@ -1,7 +1,10 @@
-import type { NodeType } from './ask'
+import { NODE_TYPE_LABELS } from '@/features/graph/config/nodeStyles'
+import type { NodeType } from '@/shared/types/ask'
 
 export type GeographyFilter = 'all' | 'domestic' | 'foreign'
 export type ConfidenceFilter = 'high' | 'medium' | 'low'
+
+export const ALL_NODE_TYPES = Object.keys(NODE_TYPE_LABELS) as NodeType[]
 
 export interface SearchFilters {
   nodeTypes: NodeType[]
@@ -16,7 +19,7 @@ export interface SearchFilters {
 }
 
 export const DEFAULT_FILTERS: SearchFilters = {
-  nodeTypes: [],
+  nodeTypes: [...ALL_NODE_TYPES],
   geography: 'all',
   yearFrom: null,
   yearTo: null,
@@ -25,6 +28,11 @@ export const DEFAULT_FILTERS: SearchFilters = {
   processKeyword: '',
   showContradictions: true,
   showGaps: true,
+}
+
+export function isAllNodeTypesSelected(nodeTypes: NodeType[]): boolean {
+  if (nodeTypes.length !== ALL_NODE_TYPES.length) return false
+  return ALL_NODE_TYPES.every((type) => nodeTypes.includes(type))
 }
 
 const CONFIDENCE_ORDER: Record<ConfidenceFilter, number> = {

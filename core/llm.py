@@ -31,10 +31,12 @@ class YandexLLM(LLMClient):
             "messages": messages,
         }
         headers = {"Authorization": f"Api-Key {self.api_key}", "x-folder-id": self.folder}
-        for attempt in range(4):
+        # Общий ключ Yandex троттлится (429). Ретраим с backoff — тогда лимит частоты
+        # просто замедляет сборку, а не роняет её.
+        for attempt in range(7):
             r = requests.post(self.URL, headers=headers, json=body, timeout=60)
-            if r.status_code in (429, 500, 503) and attempt < 3:
-                time.sleep(2 ** attempt)
+            if r.status_code in (429, 500, 503) and attempt < 6:
+                time.sleep(min(2 ** attempt, 10))
                 continue
             r.raise_for_status()
             return r.json()["result"]["alternatives"][0]["message"]["text"]

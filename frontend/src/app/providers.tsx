@@ -4,6 +4,7 @@ import { ConfigProvider, theme as antTheme } from 'antd'
 import ruRU from 'antd/locale/ru_RU'
 import { store } from './store'
 import { useAppSelector } from './hooks'
+import { ThemeSync } from './ThemeSync'
 
 const { defaultAlgorithm, darkAlgorithm } = antTheme
 
@@ -22,9 +23,12 @@ function AntdProvider({ children }: ProvidersProps) {
         algorithm: isDark ? darkAlgorithm : defaultAlgorithm,
         token: {
           colorPrimary: '#1677ff',
+          colorBgLayout: isDark ? '#0a0a0a' : '#f0f2f5',
+          colorBgContainer: isDark ? '#141414' : '#ffffff',
         },
       }}
     >
+      <ThemeSync />
       {children}
     </ConfigProvider>
   )

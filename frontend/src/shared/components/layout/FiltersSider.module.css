@@ -1,0 +1,13 @@
+.drawer :global(.ant-drawer-body) {
+  overflow-y: auto;
+}
+
+.content {
+  padding: 0 4px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

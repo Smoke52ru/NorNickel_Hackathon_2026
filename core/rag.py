@@ -65,13 +65,24 @@ def _apply_filters(hits, subgraph, filters, graph):
         nf = filters["numeric"]
         docs = analysis.docs_matching_numeric(graph, nf["property"], nf.get("op", "<="), nf["value"])
         hits = [h for h in hits if h["doc_id"] in docs]
+    if filters.get("materialKeyword") and graph:
+        docs = analysis.docs_with_entity(graph, "Material", filters["materialKeyword"])
+        if docs is not None:
+            hits = [h for h in hits if h["doc_id"] in docs]
+    if filters.get("processKeyword") and graph:
+        docs = analysis.docs_with_entity(graph, "Process", filters["processKeyword"])
+        if docs is not None:
+            hits = [h for h in hits if h["doc_id"] in docs]
     return hits, subgraph
 
 
 def answer(question, retriever, graph, llm, filters=None):
     """Полный ответ: текст + источники + подграф + пробелы/противоречия + рекомендации + цепочки."""
     hits = retriever.search(question, k=6) if retriever else []
-    subgraph = graph.subgraph_for(question) if graph else dict(EMPTY_GRAPH)
+    if graph:
+        subgraph = graph.subgraph_for_query(question, [h["doc_id"] for h in hits])
+    else:
+        subgraph = dict(EMPTY_GRAPH)
     hits, subgraph = _apply_filters(hits, subgraph, filters, graph)
 
     if not hits:

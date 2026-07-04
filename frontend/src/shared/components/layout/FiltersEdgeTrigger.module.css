@@ -1,6 +1,6 @@
 .trigger {
   position: fixed;
-  right: 0;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 90;
@@ -11,11 +11,11 @@
   height: 96px;
   padding: 0;
   border: none;
-  border-radius: 8px 0 0 8px;
+  border-radius: 0 8px 8px 0;
   background: var(--ant-color-primary);
   color: #fff;
   cursor: pointer;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   transition: width 0.2s ease, box-shadow 0.2s ease;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -26,7 +26,7 @@
 
 .trigger:hover {
   width: 40px;
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
 }
 
 .trigger:focus-visible {
@@ -34,13 +34,8 @@
   outline-offset: 2px;
 }
 
-.badge {
-  position: absolute;
-  top: 8px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #52c41a;
-  box-shadow: 0 0 0 2px var(--ant-color-primary);
+@media (min-width: 992px) {
+  .trigger {
+    display: none;
+  }
 }

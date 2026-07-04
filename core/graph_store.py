@@ -86,6 +86,17 @@ class NetworkxGraphStore(GraphStore):
         """Подграф по теме вопроса — то, что уходит на визуализацию."""
         return self.to_dict(self.ego(self.match(text), hops))
 
+    def subgraph_for_query(self, text, doc_ids, limit=30):
+        """Подграф из сущностей найденных документов + совпадений с вопросом.
+        Даёт богатый и РЕЛЕВАНТНЫЙ подграф (сущности того, из чего собран ответ),
+        а не только слова, буквально встретившиеся в вопросе."""
+        seed = set(self.match(text))
+        docs = set(doc_ids)
+        doc_nodes = [n for n, d in self.g.nodes(data=True) if docs & set(d.get("sources") or [])]
+        doc_nodes.sort(key=lambda n: -self.g.degree(n))
+        seed |= set(doc_nodes[:limit])
+        return self.to_dict(seed)
+
     def overview(self, max_nodes=150):
         """Срез всего графа для обзорной «карты знаний»: самые связанные узлы."""
         deg = sorted(self.g.degree, key=lambda x: -x[1])[:max_nodes]

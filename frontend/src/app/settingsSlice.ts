@@ -12,11 +12,17 @@ export interface GraphPanelState {
   focusedEdgeId: string | null
 }
 
+export interface DocumentPanelState {
+  open: boolean
+  docId: string | null
+}
+
 export interface SettingsState {
   theme: ThemeMode
   filters: SearchFilters
   graphPanel: GraphPanelState
-  settingsDrawerOpen: boolean
+  documentPanel: DocumentPanelState
+  filtersPanelOpen: boolean
 }
 
 const THEME_STORAGE_KEY = 'kickout-theme'
@@ -35,7 +41,11 @@ const initialState: SettingsState = {
     focusedNodeId: null,
     focusedEdgeId: null,
   },
-  settingsDrawerOpen: false,
+  documentPanel: {
+    open: false,
+    docId: null,
+  },
+  filtersPanelOpen: false,
 }
 
 const settingsSlice = createSlice({
@@ -73,11 +83,27 @@ const settingsSlice = createSlice({
     setFocusedNode(state, action: PayloadAction<string | null>) {
       state.graphPanel.focusedNodeId = action.payload
     },
-    openSettingsDrawer(state) {
-      state.settingsDrawerOpen = true
+    openDocumentPanel(
+      state,
+      action: PayloadAction<{ docId?: string } | undefined>,
+    ) {
+      state.documentPanel.open = true
+      if (action.payload?.docId) {
+        state.documentPanel.docId = action.payload.docId
+      }
     },
-    closeSettingsDrawer(state) {
-      state.settingsDrawerOpen = false
+    closeDocumentPanel(state) {
+      state.documentPanel.open = false
+      state.documentPanel.docId = null
+    },
+    setDocumentId(state, action: PayloadAction<string | null>) {
+      state.documentPanel.docId = action.payload
+    },
+    openFiltersPanel(state) {
+      state.filtersPanelOpen = true
+    },
+    closeFiltersPanel(state) {
+      state.filtersPanelOpen = false
     },
   },
 })
@@ -90,8 +116,11 @@ export const {
   openGraphPanel,
   closeGraphPanel,
   setFocusedNode,
-  openSettingsDrawer,
-  closeSettingsDrawer,
+  openDocumentPanel,
+  closeDocumentPanel,
+  setDocumentId,
+  openFiltersPanel,
+  closeFiltersPanel,
 } = settingsSlice.actions
 
 export default settingsSlice.reducer
