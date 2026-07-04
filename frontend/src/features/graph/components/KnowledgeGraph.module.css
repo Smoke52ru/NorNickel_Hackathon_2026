@@ -96,6 +96,15 @@
   flex-shrink: 0;
 }
 
+.legendRing {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
 .emptyState {
   flex: 1;
   display: flex;

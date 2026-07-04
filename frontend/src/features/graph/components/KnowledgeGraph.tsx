@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Network } from 'vis-network'
 import { DataSet } from 'vis-data'
 import { Card, Empty, Spin, theme } from 'antd'
@@ -6,7 +6,10 @@ import type { GraphData } from '@/shared/types/ask'
 import { NODE_COLORS, NODE_TYPE_LABELS } from '../config/nodeStyles'
 import { EDGE_STYLES, EDGE_FLAG_LABELS } from '../config/edgeStyles'
 import { getRelationLabel } from '../config/relationLabels'
-import { layoutComponents } from '../utils/layoutComponents'
+import { BRIDGE_EDGE_COLOR, getClusterBorderColor } from '../config/clusterStyles'
+import { detectClusters, isBridgeEdge } from '../utils/detectClusters'
+import { formatNodeLabel } from '../utils/formatNodeLabel'
+import { layoutClusters } from '../utils/layoutClusters'
 import styles from './KnowledgeGraph.module.css'
 
 interface KnowledgeGraphProps {
@@ -30,29 +33,52 @@ export function KnowledgeGraph({
   const networkRef = useRef<Network | null>(null)
   const { token } = theme.useToken()
 
+  const clusterResult = useMemo(
+    () => (graph ? detectClusters(graph) : null),
+    [graph],
+  )
+
   useEffect(() => {
-    if (!containerRef.current || !graph || graph.nodes.length === 0) {
+    if (!containerRef.current || !graph || graph.nodes.length === 0 || !clusterResult) {
       networkRef.current?.destroy()
       networkRef.current = null
       return
     }
 
-    const positions = layoutComponents(graph)
+    const positions = layoutClusters(graph, clusterResult)
+
+    const groups = Object.fromEntries(
+      clusterResult.clusters.map((cluster) => [
+        `cluster_${cluster.id}`,
+        { borderWidth: 5, color: { border: getClusterBorderColor(cluster.id) } },
+      ]),
+    )
 
     const nodes = new DataSet(
       graph.nodes.map((node) => {
         const pos = positions.get(node.id)
+        const clusterId = clusterResult.nodeCluster.get(node.id) ?? 0
+        const borderColor = getClusterBorderColor(clusterId)
+        const fillColor = NODE_COLORS[node.type]
         return {
           id: node.id,
-          label: node.label,
+          label: formatNodeLabel(node.label),
+          group: `cluster_${clusterId}`,
           x: pos?.x,
           y: pos?.y,
           color: {
-            background: NODE_COLORS[node.type],
-            border: NODE_COLORS[node.type],
-            highlight: { background: NODE_COLORS[node.type], border: '#000' },
+            background: fillColor,
+            border: borderColor,
+            highlight: { background: fillColor, border: '#000' },
           },
-          font: { color: token.colorText, size: 12, strokeWidth: 0 },
+          font: {
+            color: token.colorText,
+            size: 12,
+            strokeWidth: 0,
+            background: token.colorBgElevated,
+            multi: true,
+            vadjust: 0,
+          },
           title: `${NODE_TYPE_LABELS[node.type]}: ${node.label}`,
         }
       }),
@@ -61,14 +87,16 @@ export function KnowledgeGraph({
     const edges = new DataSet(
       graph.edges.map((edge, i) => {
         const style = EDGE_STYLES[edge.flag]
+        const isBridge = isBridgeEdge(edge, clusterResult.bridgeEdges)
+        const color = isBridge ? BRIDGE_EDGE_COLOR : style.color
         return {
           id: `e${i}`,
           from: edge.from,
           to: edge.to,
           label: getRelationLabel(edge.label),
-          color: { color: style.color, highlight: style.color },
-          width: style.width,
-          dashes: style.dashes,
+          color: { color, highlight: color },
+          width: isBridge ? 1 : style.width,
+          dashes: isBridge ? [4, 4] : style.dashes,
           font: {
             size: 10,
             align: 'middle' as const,
@@ -87,15 +115,16 @@ export function KnowledgeGraph({
       containerRef.current,
       { nodes, edges },
       {
+        groups,
         physics: {
           enabled: true,
           barnesHut: {
-            gravitationalConstant: -5000,
-            springLength: 80,
-            springConstant: 0.06,
-            avoidOverlap: 0.5,
+            gravitationalConstant: -6000,
+            springLength: 140,
+            springConstant: 0.05,
+            avoidOverlap: 1,
           },
-          stabilization: { iterations: 200 },
+          stabilization: { iterations: 250 },
         },
         interaction: {
           hover: true,
@@ -112,6 +141,11 @@ export function KnowledgeGraph({
           shape: 'dot',
           size: 18,
           borderWidth: 2,
+          margin: { top: 20, right: 20, bottom: 20, left: 20 },
+          font: {
+            multi: true,
+            vadjust: 0,
+          },
         },
       },
     )
@@ -124,7 +158,14 @@ export function KnowledgeGraph({
       networkRef.current?.destroy()
       networkRef.current = null
     }
-  }, [graph, token.colorText, token.colorTextSecondary, token.colorBgContainer])
+  }, [
+    graph,
+    clusterResult,
+    token.colorText,
+    token.colorTextSecondary,
+    token.colorBgContainer,
+    token.colorBgElevated,
+  ])
 
   useEffect(() => {
     if (!networkRef.current || !focusedNodeId) return
@@ -222,6 +263,20 @@ export function KnowledgeGraph({
               ),
             )}
           </div>
+          {clusterResult && clusterResult.clusters.length > 0 && (
+            <div className={styles.legendSection}>
+              <span className={styles.legendTitle}>Кластеры:</span>
+              {clusterResult.clusters.map((cluster) => (
+                <span key={cluster.id} className={styles.legendItem}>
+                  <span
+                    className={styles.legendRing}
+                    style={{ borderColor: getClusterBorderColor(cluster.id) }}
+                  />
+                  {cluster.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,15 +1,23 @@
 import { List, Typography } from 'antd'
 import type { Source } from '@/shared/types/ask'
+import { useAppDispatch } from '@/app/hooks'
+import { openDocumentPanel } from '@/app/settingsSlice'
 import styles from './SourcesList.module.css'
 
-const { Text, Paragraph } = Typography
+const { Text, Paragraph, Link } = Typography
 
 interface SourcesListProps {
   sources: Source[]
 }
 
 export function SourcesList({ sources }: SourcesListProps) {
+  const dispatch = useAppDispatch()
+
   if (sources.length === 0) return null
+
+  const handleSourceClick = (docId: string) => {
+    dispatch(openDocumentPanel({ docId }))
+  }
 
   return (
     <div className={styles.sources}>
@@ -20,9 +28,16 @@ export function SourcesList({ sources }: SourcesListProps) {
         renderItem={(source) => (
           <List.Item className={styles.sourceItem}>
             <div>
-              <Text strong>
+              <Link
+                className={styles.titleLink}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleSourceClick(source.doc_id)
+                }}
+                title="Открыть полный текст документа"
+              >
                 {source.title}
-              </Text>
+              </Link>
               <Text type="secondary" className={styles.year}>
                 {' '}
                 ({source.year})
@@ -34,9 +49,16 @@ export function SourcesList({ sources }: SourcesListProps) {
               >
                 {source.snippet}
               </Paragraph>
-              <Text type="secondary" className={styles.docId}>
-                ID: {source.doc_id}
-              </Text>
+              <Link
+                type="secondary"
+                className={styles.docId}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleSourceClick(source.doc_id)
+                }}
+              >
+                Открыть документ "{source.title}"
+              </Link>
             </div>
           </List.Item>
         )}
