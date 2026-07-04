@@ -4,7 +4,8 @@ import { QuestionForm } from '@/features/ask/components/QuestionForm'
 import { AnswerPanel } from '@/features/ask/components/AnswerPanel'
 import { useAsk } from '@/features/ask/hooks/useAsk'
 import { GraphSider } from '@/shared/components/layout/GraphSider'
-import { GraphEdgeTrigger } from '@/shared/components/layout/GraphEdgeTrigger'
+import { RightEdgeTriggers } from '@/shared/components/layout/RightEdgeTriggers'
+import { DocumentSider } from '@/shared/components/layout/DocumentSider'
 import { FiltersSider } from '@/shared/components/layout/FiltersSider'
 import { FiltersEdgeTrigger } from '@/shared/components/layout/FiltersEdgeTrigger'
 import { FiltersSidebar } from '@/shared/components/filters/FiltersSidebar'
@@ -20,6 +21,9 @@ export function AskPage() {
   const { ask, data, isLoading, isError } = useAsk()
   const filters = useAppSelector((state) => state.settings.filters)
   const graphPanelOpen = useAppSelector((state) => state.settings.graphPanel.open)
+  const documentPanelOpen = useAppSelector(
+    (state) => state.settings.documentPanel.open,
+  )
   const filtersPanelOpen = useAppSelector(
     (state) => state.settings.filtersPanelOpen,
   )
@@ -30,6 +34,7 @@ export function AskPage() {
   )
 
   const hasGraphData = (filteredGraph?.nodes.length ?? 0) > 0
+  const hasSources = (data?.sources.length ?? 0) > 0
 
   const handleFiltersApplied = useCallback(
     (next: SearchFilters, prev: SearchFilters) => {
@@ -89,12 +94,16 @@ export function AskPage() {
 
       <FiltersEdgeTrigger visible={!filtersPanelOpen} />
 
-      <GraphEdgeTrigger
-        visible={hasAsked && !isLoading && hasGraphData && !graphPanelOpen}
+      <RightEdgeTriggers
+        documentVisible={hasAsked && !isLoading && hasSources && !documentPanelOpen}
+        hasSources={hasSources}
+        graphVisible={hasAsked && !isLoading && hasGraphData && !graphPanelOpen}
         hasGraphData={hasGraphData}
       />
 
       <FiltersSider onApplied={handleFiltersApplied} />
+
+      <DocumentSider />
 
       <GraphSider
         graph={filteredGraph}

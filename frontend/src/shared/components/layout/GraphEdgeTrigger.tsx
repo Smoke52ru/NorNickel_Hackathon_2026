@@ -1,7 +1,7 @@
 import { ShareAltOutlined } from '@ant-design/icons'
 import { useAppDispatch } from '@/app/hooks'
 import { openGraphPanel } from '@/app/settingsSlice'
-import styles from './GraphEdgeTrigger.module.css'
+import styles from './RightEdgeTriggers.module.css'
 
 interface GraphEdgeTriggerProps {
   visible: boolean
