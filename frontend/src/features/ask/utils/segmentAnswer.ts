@@ -3,8 +3,24 @@ import type { AnswerLink, GraphData, GraphNode } from '@/shared/types/ask'
 export interface AnswerSegment {
   type: 'text' | 'entity'
   text: string
+  linkText?: string
   nodeId?: string
   nodeType?: GraphNode['type']
+}
+
+const WORD_CHAR = /[\p{L}\p{M}\p{N}]/u
+
+function isWordChar(char: string): boolean {
+  return char.length > 0 && WORD_CHAR.test(char)
+}
+
+/** Доводит end до конца слова, если офсет попал в середину (стеммер бэкенда). */
+function extendToWordEnd(text: string, end: number, maxEnd: number): number {
+  let extended = end
+  while (extended < maxEnd && isWordChar(text[extended] ?? '')) {
+    extended++
+  }
+  return extended
 }
 
 function segmentsFromLinks(
@@ -16,7 +32,10 @@ function segmentsFromLinks(
   const segments: AnswerSegment[] = []
   let cursor = 0
 
-  for (const link of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const link = sorted[i]
+    const nextStart = sorted[i + 1]?.start ?? answer.length
+
     if (link.start < cursor || link.end > answer.length || link.start >= link.end) {
       continue
     }
@@ -26,13 +45,17 @@ function segmentsFromLinks(
     }
 
     const node = nodes.find((n) => n.id === link.nodeId)
+    const displayEnd = extendToWordEnd(answer, link.end, nextStart)
+    const linkText = answer.slice(link.start, displayEnd)
+
     segments.push({
       type: 'entity',
-      text: link.label ?? answer.slice(link.start, link.end),
+      text: link.label ?? linkText,
+      linkText,
       nodeId: link.nodeId,
       nodeType: node?.type,
     })
-    cursor = link.end
+    cursor = displayEnd
   }
 
   if (cursor < answer.length) {
@@ -83,9 +106,11 @@ function segmentsFromMatching(answer: string, nodes: GraphNode[]): AnswerSegment
       segments.push({ type: 'text', text: answer.slice(cursor, match.start) })
     }
 
+    const linkText = answer.slice(match.start, match.end)
     segments.push({
       type: 'entity',
-      text: answer.slice(match.start, match.end),
+      text: linkText,
+      linkText,
       nodeId: match.node.id,
       nodeType: match.node.type,
     })

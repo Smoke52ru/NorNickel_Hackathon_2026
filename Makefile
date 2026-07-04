@@ -15,4 +15,4 @@ demo:
 	uvicorn api.main:app --reload
 
 front:
-	cd frontend && npm install && npm run dev
+	cd frontend && npm ci && npm run dev

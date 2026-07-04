@@ -7,6 +7,7 @@ const { Link } = Typography
 
 interface EntityLinkProps {
   nodeId: string
+  linkText: string
   label: string
   nodeType?: NodeType
   onClick: (nodeId: string) => void
@@ -14,12 +15,14 @@ interface EntityLinkProps {
 
 export function EntityLink({
   nodeId,
+  linkText,
   label,
   nodeType,
   onClick,
 }: EntityLinkProps) {
   const color = nodeType ? NODE_COLORS[nodeType] : undefined
   const typeLabel = nodeType ? NODE_TYPE_LABELS[nodeType] : undefined
+  const tooltip = typeLabel ? `${typeLabel}: ${label}` : label
 
   return (
     <Link
@@ -28,10 +31,10 @@ export function EntityLink({
         e.preventDefault()
         onClick(nodeId)
       }}
-      title={typeLabel ? `${typeLabel}: ${label}` : label}
+      title={tooltip}
       style={color ? { color } : undefined}
     >
-      {label}
+      {linkText}
     </Link>
   )
 }

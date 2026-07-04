@@ -26,6 +26,7 @@ export function LinkedAnswer({ answer, graph, answerLinks }: LinkedAnswerProps) 
           <EntityLink
             key={`${segment.nodeId}-${index}`}
             nodeId={segment.nodeId}
+            linkText={segment.linkText ?? segment.text}
             label={segment.text}
             nodeType={segment.nodeType}
             onClick={handleEntityClick}
