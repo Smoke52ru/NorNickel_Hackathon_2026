@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from core import config, rag
 from core.embeddings import get_embedder
 from core.graph_store import NetworkxGraphStore
+from core.linking import link_nodes_in_answer
 from core.llm import get_llm
 from core.retrieval import HybridRetriever
 
@@ -55,6 +56,8 @@ class Filters(BaseModel):
     year_to: int | None = None
     types: list[str] | None = None        # Material, Process, Equipment, Property, ...
     numeric: NumericFilter | None = None   # напр. {"property":"сульфаты","op":"<","value":200}
+    materialKeyword: str | None = None     # сузить до документов с этим материалом
+    processKeyword: str | None = None      # сузить до документов с этим процессом
 
 
 class AskRequest(BaseModel):
@@ -100,17 +103,31 @@ def compare(req: CompareRequest):
     return rag.compare(req.question, RETRIEVER, GRAPH)
 
 
+def _doc_mentions(doc_id, text):
+    """Позиции упоминаний сущностей графа (извлечённых из этого документа) в его тексте.
+    Фронт по nodeId находит, где сущность встречается, и подсвечивает/скроллит к ней."""
+    if GRAPH is None:
+        return []
+    nodes = [{"id": nid, "label": nd.get("name", nid)}
+             for nid, nd in GRAPH.g.nodes(data=True)
+             if doc_id in (nd.get("sources") or [])]
+    return link_nodes_in_answer(text, nodes)
+
+
 @app.get("/document/{doc_id}")
 def document(doc_id: str):
-    """Полный текст и метаданные документа - для перехода из источников и узлов Publication."""
+    """Полный текст, метаданные и упоминания сущностей — для перехода из источников/узлов
+    и подсветки найденных сущностей прямо в тексте документа."""
     if config.MOCK:
         from core import mock
         return mock.DOC
     d = DOCS.get(doc_id)
     if not d:
         raise HTTPException(status_code=404, detail="Документ не найден")
+    text = d.get("text", "")
     return {"doc_id": d["doc_id"], "title": d.get("title", ""), "year": d.get("year"),
-            "lang": d.get("lang"), "source_path": d.get("source_path"), "text": d.get("text", "")}
+            "lang": d.get("lang"), "source_path": d.get("source_path"), "text": text,
+            "mentions": _doc_mentions(doc_id, text)}
 
 
 @app.get("/graph")
