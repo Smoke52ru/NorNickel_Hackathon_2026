@@ -1,10 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useAskQuestionMutation } from '@/shared/api/baseApi'
+import { USE_MOCK } from '@/shared/config/env'
 import type { AskResponse } from '@/shared/types/ask'
 import { useAppSelector } from '@/app/hooks'
 import mockResponse from '@/shared/mocks/askResponse.json'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
