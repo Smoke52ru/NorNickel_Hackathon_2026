@@ -79,7 +79,10 @@ def _apply_filters(hits, subgraph, filters, graph):
 def answer(question, retriever, graph, llm, filters=None):
     """Полный ответ: текст + источники + подграф + пробелы/противоречия + рекомендации + цепочки."""
     hits = retriever.search(question, k=6) if retriever else []
-    subgraph = graph.subgraph_for(question) if graph else dict(EMPTY_GRAPH)
+    if graph:
+        subgraph = graph.subgraph_for_query(question, [h["doc_id"] for h in hits])
+    else:
+        subgraph = dict(EMPTY_GRAPH)
     hits, subgraph = _apply_filters(hits, subgraph, filters, graph)
 
     if not hits:
