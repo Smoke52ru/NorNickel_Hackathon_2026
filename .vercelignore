@@ -5,7 +5,6 @@ __pycache__
 *.pyc
 data/raw
 data/processed
-*.pkl
 *.faiss
 frontend/node_modules
 frontend/dist
