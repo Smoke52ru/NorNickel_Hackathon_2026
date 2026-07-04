@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 """Парсинг корпуса «Источники информации» → documents.jsonl.
 
-Один JSON на строку: {doc_id, source_path, source_type, title, authors,
-year, lang, text, chunks, meta}. Формат — см. BRIEF_DATA_Dubinin.md и PIPELINE.md.
+Одна строка = один документ: {doc_id, source_path, source_type, title,
+authors, year, lang, text, chunks, meta}. Формат — BRIEF_DATA_Dubinin.md.
 
-Принципы:
-- один битый файл не роняет прогон: каждый файл в try/except, ошибки в лог;
-- сканы (PDF без текстового слоя) пропускаются и логируются, OCR не делаем;
-- дедупликация по хешу нормализованного текста;
-- метаданные (год, журнал, выпуск) — из пути и имени файла.
-
-Запуск:
     python -m ingest.parse --input data/raw --output data/processed/documents.jsonl
-    python -m ingest.parse --priority-only          # только Обзоры + Статьи + Журналы
-    python -m ingest.parse --limit 20               # быстрый прогон
+    python -m ingest.parse --priority-only --limit 20
 """
 import argparse
 import hashlib
@@ -28,17 +20,14 @@ import fitz  # PyMuPDF
 from docx import Document
 from langdetect import DetectorFactory, detect
 
-DetectorFactory.seed = 0  # детерминированное определение языка
+DetectorFactory.seed = 0
 
 log = logging.getLogger("ingest")
 
-# ---------------------------------------------------------------- настройки
+CHUNK_WORDS = 700
+CHUNK_OVERLAP = 100
+MIN_TEXT_CHARS = 200  # меньше — скан без текстового слоя, пропускаем
 
-CHUNK_WORDS = 700      # целевой размер куска, слов
-CHUNK_OVERLAP = 100    # перекрытие между кусками, слов
-MIN_TEXT_CHARS = 200   # меньше — считаем документ пустым (скан/мусор)
-
-# верхняя папка корпуса → source_type
 SOURCE_TYPES = {
     "журналы": "journal",
     "материалы конференций": "conference",
@@ -47,16 +36,11 @@ SOURCE_TYPES = {
     "статьи": "article",
 }
 
-# приоритет обработки: Обзоры (готовые литобзоры) → Статьи → Журналы → остальное
 PRIORITY = {"review": 0, "article": 1, "journal": 2, "report": 3, "conference": 4}
 
 SKIP_EXTS = {
-    ".xls", ".xlsx", ".xlsm",          # рыночная статистика — отдельный трек
-    ".pptx", ".ppt", ".pptm", ".docm",  # презентации/макросы — не текстовый корпус
-    ".gif", ".jpg", ".png",
-    ".001", ".002",                    # куски многотомных архивов
-    ".rar",                            # нужен unrar; логируем и идём дальше
-    ".doc",                            # старый формат; их мало — пропускаем по ТЗ
+    ".xls", ".xlsx", ".xlsm", ".pptx", ".ppt", ".pptm", ".docm",
+    ".gif", ".jpg", ".png", ".001", ".002", ".rar", ".doc",
 }
 
 TRANSLIT = str.maketrans({
@@ -68,10 +52,7 @@ TRANSLIT = str.maketrans({
 })
 
 
-# ---------------------------------------------------------------- извлечение текста
-
 def parse_pdf(path: Path) -> str:
-    """Текст из PDF постранично. Пустой результат = скан (текстового слоя нет)."""
     parts = []
     with fitz.open(path) as doc:
         for page in doc:
@@ -82,7 +63,6 @@ def parse_pdf(path: Path) -> str:
 def parse_docx(path: Path) -> str:
     doc = Document(str(path))
     parts = [p.text for p in doc.paragraphs]
-    # текст из таблиц тоже ценен (составы, параметры)
     for table in doc.tables:
         for row in table.rows:
             cells = [c.text.strip() for c in row.cells]
@@ -92,11 +72,7 @@ def parse_docx(path: Path) -> str:
 
 
 def docx_meta(path: Path) -> dict:
-    """Заголовок из свойств docx, если заполнен.
-
-    Поле author намеренно не берём: там создатель файла (один и тот же
-    сотрудник на весь корпус обзоров), а не авторы работы.
-    """
+    # author из свойств не берём: там создатель файла, а не авторы работы
     out = {}
     try:
         props = Document(str(path)).core_properties
@@ -107,11 +83,9 @@ def docx_meta(path: Path) -> dict:
     return out
 
 
-# ---------------------------------------------------------------- метаданные
-
 def clean_text(text: str) -> str:
-    text = text.replace("\xa0", " ").replace("­", "")  # nbsp, мягкий перенос
-    text = re.sub(r"-\n(?=[а-яa-z])", "", text)             # перенос слова со строки
+    text = text.replace("\xa0", " ").replace("­", "")
+    text = re.sub(r"-\n(?=[а-яa-z])", "", text)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
@@ -127,10 +101,8 @@ def detect_lang(text: str) -> str:
 
 
 def year_from(rel_path: str, text: str) -> int | None:
-    """Год: сперва из пути/имени файла, затем из начала текста."""
     for m in re.finditer(r"(?<!\d)(19[89]\d|20[0-4]\d)(?!\d)", rel_path):
         return int(m.group(1))
-    # короткий год в имени журнала: "№ 03_24.pdf"
     m = re.search(r"№\s*\d+[_-](\d{2})\b", rel_path)
     if m:
         return 2000 + int(m.group(1))
@@ -139,7 +111,6 @@ def year_from(rel_path: str, text: str) -> int | None:
 
 
 def path_meta(rel_path: str) -> dict:
-    """Журнал и выпуск из пути вида 'Журналы/Горная промышленность/2024/ГП № 3-2024.pdf'."""
     meta = {}
     parts = rel_path.split("/")
     if parts[0].lower() == "журналы" and len(parts) > 2:
@@ -154,29 +125,23 @@ def path_meta(rel_path: str) -> dict:
 
 
 def guess_title(text: str, path: Path) -> str:
-    """Имя файла как заголовок: в этом корпусе оно описательное
-    («Методы очистки шахтных вод»), а первые строки текста — лист согласования."""
+    # имя файла надёжнее первых строк текста: там лист согласования
     stem = re.sub(r"[_]+", " ", path.stem).strip()
     return stem or path.stem
 
 
 def make_doc_id(rel_path: str) -> str:
-    """Читаемый стабильный id: транслит имени + короткий хеш пути."""
     stem = Path(rel_path).stem.lower().translate(TRANSLIT)
     slug = re.sub(r"[^a-z0-9]+", "_", stem).strip("_")[:60]
     h = hashlib.sha1(rel_path.encode("utf-8")).hexdigest()[:8]
     return f"{slug}_{h}" if slug else h
 
 
-# ---------------------------------------------------------------- нарезка на чанки
-
 def chunk_text(text: str, size: int = CHUNK_WORDS, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Куски ~size слов с перекрытием ~overlap, по границам абзацев."""
     paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
     chunks, current, count = [], [], 0
     for para in paragraphs:
         words = para.split()
-        # огромный абзац режем жёстко по словам
         while len(words) > size:
             if current:
                 chunks.append(" ".join(current))
@@ -196,10 +161,7 @@ def chunk_text(text: str, size: int = CHUNK_WORDS, overlap: int = CHUNK_OVERLAP)
     return chunks or ([text] if text else [])
 
 
-# ---------------------------------------------------------------- сборка записи
-
 def make_record(path: Path, root: Path) -> dict | None:
-    """Одна запись documents.jsonl. None = файл пропущен (причина в логе)."""
     rel = path.relative_to(root).as_posix()
     ext = path.suffix.lower()
 
@@ -222,13 +184,12 @@ def make_record(path: Path, root: Path) -> dict | None:
     source_type = SOURCE_TYPES.get(top, "reference")
 
     meta = path_meta(rel)
-    # у выпусков журналов имя файла криптичное («№ 01_24») — собираем из метаданных
     if meta.get("journal") and meta.get("issue"):
         journal_title = f"{meta['journal']} № {meta['issue']}"
     else:
         journal_title = None
 
-    record = {
+    return {
         "doc_id": make_doc_id(rel),
         "source_path": rel,
         "source_type": source_type,
@@ -240,13 +201,9 @@ def make_record(path: Path, root: Path) -> dict | None:
         "chunks": chunk_text(text),
         "meta": meta,
     }
-    return record
 
-
-# ---------------------------------------------------------------- вложенные архивы
 
 def unpack_nested_zips(root: Path) -> None:
-    """Zip внутри корпуса разворачиваем в папку рядом (один раз), rar только логируем."""
     for zp in list(root.rglob("*.zip")):
         target = zp.with_suffix("")
         if target.exists():
@@ -272,14 +229,12 @@ def unpack_nested_zips(root: Path) -> None:
         log.info("skip rar (unrar not available): %s", rp.relative_to(root).as_posix())
 
 
-# ---------------------------------------------------------------- прогон
-
 def collect_files(root: Path, priority_only: bool) -> list[Path]:
     files = []
     for p in root.rglob("*"):
         if not p.is_file() or p.suffix.lower() not in (".pdf", ".docx"):
             continue
-        if p.name.startswith("~$"):  # временные файлы Word
+        if p.name.startswith("~$"):
             continue
         top = p.relative_to(root).as_posix().split("/")[0].lower()
         stype = SOURCE_TYPES.get(top, "reference")
@@ -288,7 +243,7 @@ def collect_files(root: Path, priority_only: bool) -> list[Path]:
         files.append(p)
     files.sort(key=lambda p: (
         PRIORITY.get(SOURCE_TYPES.get(p.relative_to(root).as_posix().split("/")[0].lower(), ""), 9),
-        p.suffix.lower() != ".docx",  # docx раньше pdf внутри одной категории
+        p.suffix.lower() != ".docx",
         p.as_posix(),
     ))
     return files
