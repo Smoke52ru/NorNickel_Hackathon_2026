@@ -51,7 +51,6 @@ class NetworkxGraphStore(GraphStore):
                       "geo": d.get("geo", "unknown"), "flag": None,
                       "sources": d.get("sources", [])}
                      for n, d in g.nodes(data=True)]
-        # keys=True нужен: key идёт запасной подписью ребра, если нет rel
         out_edges = [{"from": u, "to": v, "label": d.get("rel", key),
                       "flag": "contradiction" if d.get("rel") == "contradicts" else "normal"}
                      for u, v, key, d in g.edges(keys=True, data=True)]
