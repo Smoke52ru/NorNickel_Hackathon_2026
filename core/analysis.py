@@ -167,3 +167,18 @@ def causal_chains(graph, node_ids, limit=6):
                 seen.add(key)
                 chains.append([_name(g, a), _name(g, b), _name(g, c)])
     return chains[:limit]
+
+
+def docs_with_entity(graph, etype, keyword):
+    """doc_id документов, где есть сущность типа etype, совпадающая с ключевым словом
+    (по префиксу слова: «никель» ловит «никеля», «никелевый»)."""
+    kw = keyword.strip().lower()[:5]
+    if not kw:
+        return None
+    docs = set()
+    for n, d in graph.g.nodes(data=True):
+        if d.get("type") != etype:
+            continue
+        if any(w[:5] == kw for w in _words(d.get("name", ""))):
+            docs |= set(d.get("sources") or [])
+    return docs
