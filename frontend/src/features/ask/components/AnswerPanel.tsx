@@ -30,6 +30,16 @@ export function AnswerPanel({ data, loading = false, hasAsked = false }: AnswerP
     data?.sources.filter((source) => {
       if (filters.yearFrom !== null && source.year < filters.yearFrom) return false
       if (filters.yearTo !== null && source.year > filters.yearTo) return false
+      if (filters.materialKeyword.trim()) {
+        const kw = filters.materialKeyword.trim().toLowerCase()
+        const haystack = `${source.title} ${source.snippet}`.toLowerCase()
+        if (!haystack.includes(kw)) return false
+      }
+      if (filters.processKeyword.trim()) {
+        const kw = filters.processKeyword.trim().toLowerCase()
+        const haystack = `${source.title} ${source.snippet}`.toLowerCase()
+        if (!haystack.includes(kw)) return false
+      }
       return true
     }) ?? []
 
@@ -78,8 +88,10 @@ export function AnswerPanel({ data, loading = false, hasAsked = false }: AnswerP
                 )}
 
                 <SourcesList sources={filteredSources} />
-                <GapsAlert gaps={data.gaps} />
-                <ContradictionsAlert contradictions={data.contradictions} />
+                {filters.showGaps && <GapsAlert gaps={data.gaps} />}
+                {filters.showContradictions && (
+                  <ContradictionsAlert contradictions={data.contradictions} />
+                )}
               </>
             )}
           </>

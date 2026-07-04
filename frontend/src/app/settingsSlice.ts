@@ -16,7 +16,7 @@ export interface SettingsState {
   theme: ThemeMode
   filters: SearchFilters
   graphPanel: GraphPanelState
-  settingsDrawerOpen: boolean
+  filtersPanelOpen: boolean
 }
 
 const THEME_STORAGE_KEY = 'kickout-theme'
@@ -35,7 +35,7 @@ const initialState: SettingsState = {
     focusedNodeId: null,
     focusedEdgeId: null,
   },
-  settingsDrawerOpen: false,
+  filtersPanelOpen: false,
 }
 
 const settingsSlice = createSlice({
@@ -73,11 +73,11 @@ const settingsSlice = createSlice({
     setFocusedNode(state, action: PayloadAction<string | null>) {
       state.graphPanel.focusedNodeId = action.payload
     },
-    openSettingsDrawer(state) {
-      state.settingsDrawerOpen = true
+    openFiltersPanel(state) {
+      state.filtersPanelOpen = true
     },
-    closeSettingsDrawer(state) {
-      state.settingsDrawerOpen = false
+    closeFiltersPanel(state) {
+      state.filtersPanelOpen = false
     },
   },
 })
@@ -90,8 +90,8 @@ export const {
   openGraphPanel,
   closeGraphPanel,
   setFocusedNode,
-  openSettingsDrawer,
-  closeSettingsDrawer,
+  openFiltersPanel,
+  closeFiltersPanel,
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

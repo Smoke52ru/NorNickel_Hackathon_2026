@@ -1,0 +1,22 @@
+.filtersSidebar {
+  display: none;
+  width: 280px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.card {
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+@media (min-width: 992px) {
+  .filtersSidebar {
+    display: block;
+  }
+}
