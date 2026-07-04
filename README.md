@@ -103,8 +103,12 @@ python scripts/build.py --input data/raw --output data/processed
 uvicorn api.main:app --reload
 
 # 6. Фронтенд
-cd frontend && npm install && npm run dev
+cd frontend && cp .env.example .env && npm install && npm run dev
 ```
+
+Переменные фронтенда — в `frontend/.env` (шаблон: `frontend/.env.example`):
+- `VITE_API_URL` — базовый URL API (`/api` в dev, полный URL бэкенда на деплое)
+- `VITE_API_PROXY_TARGET` — адрес бэкенда для dev-прокси Vite (по умолчанию `http://localhost:8000`)
 
 Готовые артефакты (обработанный `documents.jsonl`, граф, индекс) для полного корпуса
 выложены на облачный диск — ссылка в материалах сдачи, чтобы не пересобирать 5 ГБ вручную.
