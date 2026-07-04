@@ -1,9 +1,0 @@
-.link {
-  font-weight: 500;
-  border-bottom: 1px dashed currentColor;
-  cursor: pointer;
-}
-
-.link:hover {
-  opacity: 0.85;
-}
