@@ -12,10 +12,16 @@ export interface GraphPanelState {
   focusedEdgeId: string | null
 }
 
+export interface DocumentPanelState {
+  open: boolean
+  docId: string | null
+}
+
 export interface SettingsState {
   theme: ThemeMode
   filters: SearchFilters
   graphPanel: GraphPanelState
+  documentPanel: DocumentPanelState
   filtersPanelOpen: boolean
 }
 
@@ -34,6 +40,10 @@ const initialState: SettingsState = {
     open: false,
     focusedNodeId: null,
     focusedEdgeId: null,
+  },
+  documentPanel: {
+    open: false,
+    docId: null,
   },
   filtersPanelOpen: false,
 }
@@ -73,6 +83,22 @@ const settingsSlice = createSlice({
     setFocusedNode(state, action: PayloadAction<string | null>) {
       state.graphPanel.focusedNodeId = action.payload
     },
+    openDocumentPanel(
+      state,
+      action: PayloadAction<{ docId?: string } | undefined>,
+    ) {
+      state.documentPanel.open = true
+      if (action.payload?.docId) {
+        state.documentPanel.docId = action.payload.docId
+      }
+    },
+    closeDocumentPanel(state) {
+      state.documentPanel.open = false
+      state.documentPanel.docId = null
+    },
+    setDocumentId(state, action: PayloadAction<string | null>) {
+      state.documentPanel.docId = action.payload
+    },
     openFiltersPanel(state) {
       state.filtersPanelOpen = true
     },
@@ -90,6 +116,9 @@ export const {
   openGraphPanel,
   closeGraphPanel,
   setFocusedNode,
+  openDocumentPanel,
+  closeDocumentPanel,
+  setDocumentId,
   openFiltersPanel,
   closeFiltersPanel,
 } = settingsSlice.actions
