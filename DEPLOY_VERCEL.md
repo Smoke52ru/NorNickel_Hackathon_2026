@@ -1,84 +1,101 @@
 # Деплой на Vercel (фронт + бэкенд)
 
 Один проект Vercel: React/Vite + FastAPI через [Vercel Services](https://vercel.com/docs/services).
+Конфиг — `vercel.mjs` (ветка определяет режим бэкенда).
 
-> **Важно:** на Vercel бэкенд работает в **MOCK-режиме** (`MOCK=1`) — готовые ответы без torch/FAISS/LLM.
-> Полный RAG с графом — на VPS (см. `DEPLOY.md`).
+| Ветка | Режим | Бэкенд | URL |
+|-------|-------|--------|-----|
+| `dev` | mock (`MOCK=1`) | готовые ответы, без LLM/данных | Production → `nor-nickel-hackathon-2026.vercel.app` |
+| `master` | боевой (`MOCK=0`) | RAG + LLM + `data/vercel/` | Preview → `*-git-master-*.vercel.app` |
 
-## Быстрый деплой
+## Автодеплой
 
-### 1. Vercel CLI
+В `vercel.mjs`:
 
-```bash
-npm i -g vercel
-vercel login
-cd /path/to/NorNickel_Hackathon_2026
-vercel          # preview
-vercel --prod   # production
+```js
+git: { deploymentEnabled: { dev: true, master: true } }
 ```
 
-### 2. Через GitHub (рекомендуется)
-
-1. [vercel.com/new](https://vercel.com/new) → Import репозитория.
-2. **Framework Preset** → **Services** (обязательно, иначе `vercel.json` с `services` не сработает).
-3. Root Directory — корень репо (не `frontend/`).
-4. **Production Branch** → `dev` (Settings → Environments → Production).
-5. Deploy.
-
-Автодеплой включён **только для `dev`**:
-
-- `vercel.json` → `"git.deploymentEnabled": { "dev": true }` — push в другие ветки не деплоится.
-- **Production Branch** в Vercel → `dev`.
-- **Preview Deployments** отключены в настройках проекта.
+- **Production Branch** в Vercel → `dev` (Settings → Environments → Production).
+- **Preview Deployments** → **включить** (иначе push в `master` не задеплоится).
+- Preview Deployments отключены только для посторонних веток — `feat/*` не деплоится, если не указано в `deploymentEnabled`.
 
 ## Как устроено
 
-| Сервис   | Папка      | URL                         |
-|----------|------------|-----------------------------|
-| frontend | `frontend/`| `/` — SPA                   |
-| backend  | корень     | `/api/*` — FastAPI (mock)   |
+| Сервис | Папка | URL |
+|--------|-------|-----|
+| frontend | `frontend/` | `/` — SPA |
+| backend | корень | `/api/*` — FastAPI |
 
-- `vercel_app.py` — entrypoint, монтирует `api.main` на `/api`.
-- `frontend/.env.production` — `VITE_API_URL=/api`.
-- `requirements-vercel.txt` — лёгкие зависимости без torch.
+- `vercel_app.py` — entrypoint; на `master` выставляет `MOCK=0`, `EMBEDDER=yandex`, `DATA_PROCESSED=data/vercel`.
+- `frontend/.env.production` — `VITE_API_URL=/api` (одинаково для обеих веток).
+- `requirements-vercel.txt` — mock-деплой (`dev`).
+- `requirements-vercel-prod.txt` — боевой деплой (`master`): FAISS, numpy, без torch.
 
-## Проверка после деплоя
+## Переменные окружения (ветка master)
 
-```bash
-curl https://ВАШ-ПРОЕКТ.vercel.app/api/health
-curl -X POST https://ВАШ-ПРОЕКТ.vercel.app/api/ask \
-  -H 'Content-Type: application/json' \
-  -d '{"question":"тест"}'
+Задать в Vercel Dashboard → Environment Variables → **Preview** → scope **master**:
+
+| Переменная | Пример | Зачем |
+|------------|--------|-------|
+| `YC_API_KEY` | `AQVN...` | YandexGPT + эмбеддинги |
+| `YC_FOLDER` | `b1g...` | folder ID |
+| `LLM_BACKEND` | `yandex` | LLM-провайдер |
+| `EMBEDDER` | `yandex` | уже по умолчанию в `vercel_app.py` |
+| `GIGACHAT_CREDENTIALS` | (опционально) | если `LLM_BACKEND=gigachat` |
+
+Без ключей `/ask` на `master` вернёт 502 при вызове LLM.
+
+## Данные для master
+
+Артефакты лежат в `data/vercel/` (не игнорируется `.vercelignore`).
+
+При сборке, если файлов нет, `scripts/vercel-prepare-data.sh`:
+- копирует `data/sample/documents.jsonl`;
+- создаёт пустой `graph.pkl`.
+
+Для полного графа и индекса — положите в `data/vercel/` локально собранные файлы и закоммитьте:
+
+```
+data/vercel/documents.jsonl
+data/vercel/graph.pkl
+data/vercel/vectors.npy   # опционально
 ```
 
-Swagger: `https://ВАШ-ПРОЕКТ.vercel.app/api/docs`
+> Полный корпус (~5 ГБ) на Vercel не поместится. Для жюри используйте сжатый/репрезентативный набор или артефакты с облачного диска.
 
-## Переменные окружения (опционально)
-
-| Переменная | Сервис  | Значение | Зачем |
-|------------|---------|----------|-------|
-| `MOCK`     | backend | `1`      | по умолчанию уже в `vercel_app.py` |
-| `MOCK`     | backend | `0`      | боевой режим — **не влезет** в serverless без доработок |
-
-## Локальная проверка конфига
+## Проверка
 
 ```bash
-pip install -r requirements-vercel.txt
+# mock (dev)
+curl https://nor-nickel-hackathon-2026.vercel.app/api/health
+
+# master (подставьте URL из Vercel после push)
+curl https://ВАШ-ПРОЕКТ-git-master-*.vercel.app/api/health
+# ожидается: {"status":"ok","mock":false,...}
+```
+
+## Локальная проверка
+
+```bash
+# mock
+MOCK=1 pip install -r requirements-vercel.txt
 MOCK=1 uvicorn vercel_app:app --reload --port 8000
-# API: http://127.0.0.1:8000/api/docs
 
-cd frontend && npm run dev
-# фронт на :3000 проксирует /api → :8000
+# master
+pip install -r requirements-vercel-prod.txt
+bash scripts/vercel-prepare-data.sh
+VERCEL_GIT_COMMIT_REF=master MOCK=0 YC_API_KEY=... YC_FOLDER=... \
+  uvicorn vercel_app:app --reload --port 8000
 ```
 
-## Ограничения
+## Ограничения master на Vercel
 
-- Размер функции ≤ 500 МБ — полный `requirements.txt` (torch) не подходит.
-- Нет `data/processed/` — только mock-ответы.
-- Таймаут функции — до 30 с (в `vercel.json` → `services.backend.functions`).
+- Лимит функции ≤ 500 МБ — локальный torch/sentence-transformers не используем.
+- Эмбеддинги только через Yandex/GigaChat API.
+- Таймаут до 60 с (LLM-запросы).
+- Cold start: первая загрузка FAISS/графа может занять несколько секунд.
 
-## Production URL
+## Production URL (mock, dev)
 
 https://nor-nickel-hackathon-2026.vercel.app
-
-Для жюри с реальным RAG: фронт на Vercel + бэкенд на VPS, `VITE_API_URL=https://ваш-vps:8000`.

@@ -1,9 +1,11 @@
 .env
+.env.old
 
 data/raw/
 data/processed/
 *.jsonl
 !data/sample/**
+!data/vercel/**
 
 __pycache__/
 *.py[cod]
@@ -23,4 +25,5 @@ Thumbs.db
 
 *.faiss
 *.pkl
+!data/vercel/**
 .vercel
